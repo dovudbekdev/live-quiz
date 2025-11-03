@@ -1,8 +1,26 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
+import { swaggerConfig } from '@config/index';
+import { SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+  const apiPrefix = 'api';
+
+  const configServie = app.get(ConfigService);
+  const PORT = configServie.get<number>('app.port', 4000);
+
+  // Set api prefix
+  app.setGlobalPrefix(apiPrefix);
+
+  // Swagger
+  const documentFactory = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup(`${apiPrefix}/doc`, app, documentFactory);
+
+  await app.listen(PORT, () => {
+    console.log(`Server ${PORT}'da ishga tushdi`);
+    console.log(`Swagger url: http://localhost:${PORT}/${apiPrefix}/doc`);
+  });
 }
 bootstrap();
