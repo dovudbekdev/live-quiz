@@ -14,13 +14,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Options {
-  A
-  B
-  C
-  D
-}
-
 enum QuizType {
   INDIVIDUAL // Yakka
   TEAM // Jamoaviy
@@ -47,9 +40,9 @@ model Students {
   socketId String   @map("socket_id")
   joinedAt DateTime @default(now()) @map("joined_at")
 
-  quiz    Quizzes   @relation(fields: [quizId], references: [id])
-  answers Answers[]
-  results Results?
+  quiz           Quizzes          @relation(fields: [quizId], references: [id])
+  results        Results?
+  studentAnswers StudentAnswers[]
 
   @@map("students")
 }
@@ -57,7 +50,7 @@ model Students {
 model Quizzes {
   id        Int      @id @default(autoincrement())
   teacherId Int
-  type      QuizType
+  type      QuizType @unique
   roomCode  String   @unique @map("room_code")
   isActive  Boolean  @default(false) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
@@ -71,34 +64,42 @@ model Quizzes {
 }
 
 model Questions {
-  id            Int      @id @default(autoincrement())
-  quizId        Int
-  questionText  String   @map("question_text")
-  optionA       Options  @map("option_a")
-  optionB       Options  @map("option_b")
-  optionC       Options? @map("option_c")
-  optionD       Options? @map("option_d")
-  correctOption Options  @map("correct_option")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id           Int    @id @default(autoincrement())
+  quizId       Int
+  questionText String @map("question_text")
 
-  quizze  Quizzes   @relation(fields: [quizId], references: [id])
-  answers Answers[]
+  quizze         Quizzes          @relation(fields: [quizId], references: [id])
+  answers        Answers[]
+  studentAnswers StudentAnswers[]
 
   @@map("questions")
 }
 
 model Answers {
-  id             Int      @id @default(autoincrement())
-  studentId      Int      @map("student_id")
-  questionId     Int      @map("question_id")
-  selectedOption Options  @map("selected_option")
-  isCorrect      Boolean  @map("is_correct")
-  answeredAt     DateTime @map("answered_at")
+  id         Int     @id @default(autoincrement())
+  questionId Int     @map("question_id")
+  answerText String  @map("answer_text")
+  isCorrect  Boolean @default(false) @map("is_correct")
+  // answeredAt     DateTime @map("answered_at")
 
-  student  Students  @relation(fields: [studentId], references: [id])
-  question Questions @relation(fields: [questionId], references: [id])
+  question       Questions        @relation(fields: [questionId], references: [id])
+  studentAnswers StudentAnswers[]
 
   @@map("answers")
+}
+
+model StudentAnswers {
+  id         Int      @id @default(autoincrement())
+  studentId  Int      @map("student_id")
+  answerId   Int      @map("answer_id")
+  questionId Int      @map("question_id")
+  answeredAt DateTime @default(now()) @map("answered_at")
+
+  student  Students  @relation(fields: [studentId], references: [id])
+  answer   Answers   @relation(fields: [answerId], references: [id])
+  question Questions @relation(fields: [questionId], references: [id])
+
+  @@map("student_answers")
 }
 
 model Results {

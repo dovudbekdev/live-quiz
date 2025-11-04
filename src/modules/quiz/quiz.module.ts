@@ -8,5 +8,6 @@ import { TokenService } from '@common/services';
   imports: [PrismaModule],
   controllers: [QuizController],
   providers: [QuizService, TokenService],
+  exports: [QuizService],
 })
 export class QuizModule {}

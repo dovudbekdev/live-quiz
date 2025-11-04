@@ -7,6 +7,7 @@ import { UserModule } from './modules/user/user.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { QuizModule } from './modules/quiz/quiz.module';
+import { QuestionModule } from './modules/question/question.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { QuizModule } from './modules/quiz/quiz.module';
     QuizModule,
     // UserModule,
     PrismaModule,
+    QuestionModule,
   ],
 })
 export class AppModule {}
