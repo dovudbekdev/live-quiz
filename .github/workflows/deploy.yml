@@ -25,6 +25,8 @@ jobs:
       # Prisma client generatsiya qilish
       - name: Prisma client generate
         run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       # Build qilish
       - name: Build qilish
