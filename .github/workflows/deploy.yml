@@ -78,7 +78,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/live-quiz
+            cd ~/${{vars.APP_NAME}}
             npm install --omit=dev
 
       # PM2 bilan loyiha ishga tushirish / restart
