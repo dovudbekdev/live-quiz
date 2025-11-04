@@ -23,4 +23,5 @@ async function bootstrap() {
     console.log(`Swagger url: http://localhost:${PORT}/${apiPrefix}/doc`);
   });
 }
+
 bootstrap();
