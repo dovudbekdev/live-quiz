@@ -1,0 +1,40 @@
+name: Deploy to Server
+
+on:
+    workflow_dispatch:
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Repositoriyani yuklash
+              uses: actions/checkout@v4
+
+            - name: node_modules'ni o'rnatish
+              run: npm ci
+
+            - name: Build qilish
+              run: npm build
+
+            - name: Serverda loyiha saqlash uchun papka yaratish
+              uses: appleboy/ssh-action@1.0.3
+              with:
+                  host: ${{secrets.SERVER_HOST}}
+                  username: ${{secrets.SERVER_USERNAME}}
+                  key: ${{secrets.SSH_PRIVATE_KEY}}
+                  script: |
+                      if [ -d ${{vars.APP_NAME}} ]; then
+                        echo "${{vars.APP_NAME}} papkasi mavjud"
+                      else
+                        mkdir ${{vars.APP_NAME}}
+                      fi
+
+            - name: dist papkasini serverga yuklash
+              uses: appleboy/scp-action@v0.1.4
+              with:
+                  username: ${{ secrets.SERVER_USER }}
+                  host: ${{ secrets.SERVER_HOST }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  source: "dist/*"
+                  target: "~/${{vars.APP_NAME}}"
