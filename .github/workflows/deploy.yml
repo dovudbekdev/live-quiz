@@ -69,6 +69,7 @@ jobs:
                   target: "/root/${{ vars.APP_NAME }}"
                   port: 22
                   debug: true
+                  overwrite: true
 
             # .env.example faylni serverga yuklash
             - name: .env.example faylni serverga yuborish
