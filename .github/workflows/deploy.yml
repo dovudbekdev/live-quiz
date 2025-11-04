@@ -1,48 +1,48 @@
 name: Deploy to Server
 
 on:
-  workflow_dispatch:
+    workflow_dispatch:
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    deploy:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Repositoriyani yuklash
-        uses: actions/checkout@v4
+        steps:
+            - name: Repositoriyani yuklash
+              uses: actions/checkout@v4
 
-      - name: Node.js o‘rnatish
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
+            - name: Node.js o‘rnatish
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 22
 
-      - name: node_modules'ni o‘rnatish
-        run: npm ci
+            - name: node_modules'ni o‘rnatish
+              run: npm ci
 
-      - name: Build qilish
-        run: npm run build
+            - name: Build qilish
+              run: npm run build
 
-      - name: Serverda loyiha papkasini yaratish
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            if [ -d ~/${{ vars.APP_NAME }} ]; then
-              echo "${{ vars.APP_NAME }} papkasi mavjud"
-            else
-              mkdir -p ~/${{ vars.APP_NAME }}
-              echo "${{ vars.APP_NAME }} papkasi yaratildi"
-            fi
+            - name: Serverda loyiha papkasini yaratish
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.SERVER_HOST }}
+                  username: ${{ secrets.SERVER_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  script: |
+                      if [ -d ~/${{ vars.APP_NAME }} ]; then
+                        echo "${{ vars.APP_NAME }} papkasi mavjud"
+                      else
+                        mkdir -p ~/${{ vars.APP_NAME }}
+                        echo "${{ vars.APP_NAME }} papkasi yaratildi"
+                      fi
 
-      - name: dist papkasini serverga yuklash
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          username: ${{ secrets.SERVER_USERNAME }}
-          host: ${{ secrets.SERVER_HOST }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "dist/*"
-          target: "~/${{ vars.APP_NAME }}"
-          port: 22
-          debug: true
+            - name: dist papkasini serverga yuklash
+              uses: appleboy/scp-action@v0.1.4
+              with:
+                  username: ${{ secrets.SERVER_USERNAME }}
+                  host: ${{ secrets.SERVER_HOST }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  source: "dist/*"
+                  target: "~/${{ vars.APP_NAME }}"
+                  port: 22
+                  debug: true
