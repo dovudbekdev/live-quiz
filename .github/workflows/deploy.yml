@@ -94,6 +94,9 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # NVM orqali o‘rnatilgan node va npm path qo‘shish
+            export PATH=$PATH:/root/.nvm/versions/node/v24.11.0/bin
+
             cd /root/${{ vars.APP_NAME }}
 
             # PM2'ni tekshirish, agar o'rnatilmagan bo'lsa global o'rnatish
