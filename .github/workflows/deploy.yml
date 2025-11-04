@@ -1,114 +1,119 @@
 name: Deploy to Server
 
 on:
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
+  deploy:
+    runs-on: ubuntu-latest
 
-        steps:
-            # Repositoriyani yuklash
-            - name: Repositoriyani yuklash
-              uses: actions/checkout@v4
+    steps:
+      # Repositoriyani yuklash
+      - name: Repositoriyani yuklash
+        uses: actions/checkout@v4
 
-            # Node.js o'rnatish
-            - name: Node.js o‘rnatish
-              uses: actions/setup-node@v5
-              with:
-                  node-version: 22
+      # Node.js o'rnatish
+      - name: Node.js o‘rnatish
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
 
-            # node_modules o‘rnatish (build uchun)
-            - name: node_modules'ni o‘rnatish
-              run: npm ci
+      # node_modules o‘rnatish (build uchun)
+      - name: node_modules'ni o‘rnatish
+        run: npm ci
 
-            # Build qilish
-            - name: Build qilish
-              run: npm run build
+      # Build qilish
+      - name: Build qilish
+        run: npm run build
 
-            # Serverda loyiha papkasini yaratish
-            - name: Serverda loyiha papkasini yaratish
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.SERVER_HOST }}
-                  username: ${{ secrets.SERVER_USERNAME }}
-                  key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  script: |
-                      if [ -d /root/${{ vars.APP_NAME }} ]; then
-                        echo "${{ vars.APP_NAME }} papkasi mavjud"
-                      else
-                        mkdir -p /root/${{ vars.APP_NAME }}
-                        echo "${{ vars.APP_NAME }} papkasi yaratildi"
-                      fi
+      # Serverda loyiha papkasini yaratish
+      - name: Serverda loyiha papkasini yaratish
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            if [ -d /root/${{ vars.APP_NAME }} ]; then
+              echo "${{ vars.APP_NAME }} papkasi mavjud"
+            else
+              mkdir -p /root/${{ vars.APP_NAME }}
+              echo "${{ vars.APP_NAME }} papkasi yaratildi"
+            fi
 
-            # Kerakli fayl va papkalarni serverga yuklash
-            - name: dist papkasini serverga yuklash
-              uses: appleboy/scp-action@v0.1.4
-              with:
-                  username: ${{ secrets.SERVER_USERNAME }}
-                  host: ${{ secrets.SERVER_HOST }}
-                  key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  source: "package.json, package-lock.json, dist/*"
-                  target: "/root/${{ vars.APP_NAME }}"
-                  port: 22
-                  debug: true
+      # Kerakli fayl va papkalarni serverga yuklash
+      - name: dist papkasini serverga yuklash
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          username: ${{ secrets.SERVER_USERNAME }}
+          host: ${{ secrets.SERVER_HOST }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "package.json, package-lock.json, dist/*"
+          target: "/root/${{ vars.APP_NAME }}"
+          port: 22
+          debug: true
 
-            # Serverda .env faylni secrets orqali yaratish
-            - name: Serverda .env faylni yaratish
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.SERVER_HOST }}
-                  username: ${{ secrets.SERVER_USERNAME }}
-                  key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  script: |
-                      cd /root/${{ vars.APP_NAME }}
-                      echo "PORT=${{ vars.PORT }}" > .env
-                      echo "APP_NAME=${{ vars.APP_NAME }}" >> .env
-                      echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-                      echo "ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}" >> .env
-                      echo "ACCESS_TOKEN_EXPIRES_IN=${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}" >> .env
-                      echo "REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}" >> .env
-                      echo "REFRESH_TOKEN_EXPIRES_IN=${{ secrets.REFRESH_TOKEN_EXPIRES_IN }}" >> .env
+      # Serverda .env faylni secrets orqali yaratish
+      - name: Serverda .env faylni yaratish
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/${{ vars.APP_NAME }}
+            echo "PORT=${{ vars.PORT }}" > .env
+            echo "APP_NAME=${{ vars.APP_NAME }}" >> .env
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+            echo "ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}" >> .env
+            echo "ACCESS_TOKEN_EXPIRES_IN=${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}" >> .env
+            echo "REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}" >> .env
+            echo "REFRESH_TOKEN_EXPIRES_IN=${{ secrets.REFRESH_TOKEN_EXPIRES_IN }}" >> .env
 
-            # Serverda node_modules o'rnatish (faqat production)
-            - name: Serverda node_modules o'rnatish
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.SERVER_HOST }}
-                  username: ${{ secrets.SERVER_USERNAME }}
-                  key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  script: |
-                      cd /root/${{ vars.APP_NAME }}
-                      npm install
+      # Serverda node_modules o'rnatish (faqat production)
+      - name: Serverda node_modules o'rnatish
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # NVM orqali o‘rnatilgan node va npm path qo‘shish
+            export PATH=$PATH:/root/.nvm/versions/node/v24.11.0/bin
 
-            # PM2 bilan loyiha ishga tushirish / restart
-            - name: PM2 bilan loyiha ishga tushirish / restart
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.SERVER_HOST }}
-                  username: ${{ secrets.SERVER_USERNAME }}
-                  key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  script: |
-                      cd /root/${{ vars.APP_NAME }}
+            cd /root/${{ vars.APP_NAME }}
 
-                      # PM2'ni tekshirish, agar o'rnatilmagan bo'lsa global o'rnatish
-                      if ! command -v pm2 &> /dev/null
-                      then
-                          echo "PM2 topilmadi, global o'rnatilyapti..."
-                          npm i -g pm2
-                      fi
+            # Production dependencies o‘rnatish
+            npm install
 
-                      # PM2 process nomi (deploy nomi)
-                      APP_NAME="${{ vars.APP_NAME }}"
+      # PM2 bilan loyiha ishga tushirish / restart
+      - name: PM2 bilan loyiha ishga tushirish / restart
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/${{ vars.APP_NAME }}
 
-                      # Agar process mavjud bo'lsa, restart qiladi, yo'q bo'lsa, yangi start
-                      if pm2 list | grep -q "$APP_NAME"; then
-                          echo "PM2 process topildi, restart qilinmoqda..."
-                          pm2 restart "$APP_NAME"
-                      else
-                          echo "PM2 process topilmadi, yangi start qilinmoqda..."
-                          pm2 start dist/main.js --name "$APP_NAME" --env production
-                      fi
+            # PM2'ni tekshirish, agar o'rnatilmagan bo'lsa global o'rnatish
+            if ! command -v pm2 &> /dev/null
+            then
+                echo "PM2 topilmadi, global o'rnatilyapti..."
+                npm i -g pm2
+            fi
 
-                      # PM2 processlarini saqlash (server restartdan keyin ham ishga tushishi uchun)
-                      pm2 save
+            # PM2 process nomi (deploy nomi)
+            APP_NAME="${{ vars.APP_NAME }}"
+
+            # Agar process mavjud bo'lsa, restart qiladi, yo'q bo'lsa, yangi start
+            if pm2 list | grep -q "$APP_NAME"; then
+                echo "PM2 process topildi, restart qilinmoqda..."
+                pm2 restart "$APP_NAME"
+            else
+                echo "PM2 process topilmadi, yangi start qilinmoqda..."
+                pm2 start dist/main.js --name "$APP_NAME" --env production
+            fi
+
+            # PM2 processlarini saqlash (server restartdan keyin ham ishga tushishi uchun)
+            pm2 save
