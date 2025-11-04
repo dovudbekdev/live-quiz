@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsInt } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsInt, IsString } from 'class-validator';
 
 export class CreateAnswerDto {
   @ApiProperty({
@@ -9,6 +9,20 @@ export class CreateAnswerDto {
   })
   @IsInt()
   questionId: number;
+
+  @ApiProperty({
+    type: String,
+    example: 'Dasturlash tili',
+    description: 'Savol',
+  })
+  @IsString()
   answerText: string;
+
+  @ApiPropertyOptional({
+    type: Boolean,
+    example: false,
+    default: false,
+    description: "true yoki fals, true bo'lsa bu javob to'g'ri bo'ladi",
+  })
   isCorrect: boolean;
 }
