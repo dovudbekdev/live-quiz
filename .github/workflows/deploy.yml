@@ -73,8 +73,8 @@ jobs:
       # Serverda node_modules o'rnatish (faqat production)
       - name: Serverda node_modules o'rnatish
         env:
-          HOST: ${{vars.HOST}}
-          USER: ${{vars.USER}}
+          HOST: ${{secrets.SERVER_HOST}}
+          USER: ${{secrets.SERVER_USERNAME}}
         run: ssh $USER@$HOST "cd ~/${{vars.APP_NAME}} && npm install"
         shell: bash
 
