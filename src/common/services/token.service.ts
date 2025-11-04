@@ -40,8 +40,8 @@ export class TokenService {
   async verifyToken(token: string, type: TokenType): Promise<IJwtPayload> {
     const secret =
       type === 'access'
-        ? this.tokenConfig.accessTokenSecret
-        : this.tokenConfig.refreshTokenSecret;
+        ? this.configService.get<string>('jwt.accessTokenSecret')
+        : this.configService.get<string>('jwt.refreshTokenSecret', 'secretPro');
 
     return this.jwtService.verifyAsync(token, { secret });
   }

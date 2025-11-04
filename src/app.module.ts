@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
+import { QuizModule } from './modules/quiz/quiz.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { JwtModule } from '@nestjs/jwt';
     }),
     JwtModule.register({ global: true }),
     AuthModule,
-    UserModule,
+    QuizModule,
+    // UserModule,
     PrismaModule,
   ],
 })
