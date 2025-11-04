@@ -52,7 +52,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           host: ${{ secrets.SERVER_HOST }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "package.json, package-lock.json, dist/*, prisma/*"
+          source: "package.json, package-lock.json, prisma.config.ts, dist/*, prisma/*"
           target: "/root/${{ vars.APP_NAME }}"
           port: 22
           debug: true
