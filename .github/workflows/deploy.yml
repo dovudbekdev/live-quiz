@@ -46,3 +46,70 @@ jobs:
                   target: "~/${{ vars.APP_NAME }}"
                   port: 22
                   debug: true
+
+            - name: .env.example faylni serverga yuborish
+              uses: appleboy/scp-action@v0.1.4
+              with:
+                  username: ${{ secrets.SERVER_USERNAME }}
+                  host: ${{ secrets.SERVER_HOST }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  source: ".env.example"
+                  target: "~/${{ vars.APP_NAME }}"
+                  port: 22
+                  debug: true
+
+            - name: .env faylni yaratish
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.SERVER_HOST }}
+                  username: ${{ secrets.SERVER_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  script: |
+                      cd ~/${{vars.APP_NAME}}
+                      cp .env.example .env
+                      sed -i \
+                      -e "s|^PORT=.*|PORT=${{ vars.PORT }}|" \
+                      -e "s|^APP_NAME=.*|APP_NAME=${{ vars.APP_NAME }}|" \
+                      -e "s|^DATABASE_URL=.*|DATABASE_URL=${{ secrets.DATABASE_URL }}|" \
+                      -e "s|^ACCESS_TOKEN_SECRET=.*|ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}|" \
+                      -e "s|^ACCESS_TOKEN_EXPIRES_IN=.*|ACCESS_TOKEN_EXPIRES_IN=${{secrets.ACCESS_TOKEN_EXPIRES_IN}}" \
+                      -e "s|^REFRESH_TOKEN_SECRET=.*|REFRESH_TOKEN_SECRET=${{ vars.REFRESH_TOKEN_SECRET }}|" \
+                      -e "s|^REFRESH_TOKEN_EXPIRES_IN=.*|REFRESH_TOKEN_EXPIRES_IN=${{ vars.REFRESH_TOKEN_EXPIRES_IN }}|" \
+                      .env
+
+            - name: PM2 bilan loyihani ishga tushirish / restart
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.SERVER_HOST }}
+                  username: ${{ secrets.SERVER_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  script: |
+                      cd ~/${{ vars.APP_NAME }}
+
+                      # Agar .env mavjud bo'lmasa, build ishlamaydi
+                      if [ ! -f .env ]; then
+                        echo ".env fayl topilmadi! Iltimos, .env yaratilsin."
+                        exit 1
+                      fi
+
+                      # PM2'ni tekshirish, agar o'rnatilmagan bo'lsa global o'rnatish
+                      if ! command -v pm2 &> /dev/null
+                      then
+                          echo "PM2 topilmadi, global o'rnatilyapti..."
+                          npm i -g pm2
+                      fi
+
+                      # PM2 process nomi (deploy nomi)
+                      APP_NAME="${{ vars.APP_NAME }}"
+
+                      # Agar process mavjud bo'lsa, restart qiladi, yo'q bo'lsa, yangi start
+                      if pm2 list | grep -q "$APP_NAME"; then
+                          echo "PM2 process topildi, restart qilinmoqda..."
+                          pm2 restart "$APP_NAME"
+                      else
+                          echo "PM2 process topilmadi, yangi start qilinmoqda..."
+                          pm2 start dist/main.js --name "$APP_NAME" --env production
+                      fi
+
+                      # PM2 processlarini saqlash (server restartdan keyin ham ishga tushishi uchun)
+                      pm2 save
