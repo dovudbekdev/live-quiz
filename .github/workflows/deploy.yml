@@ -8,20 +8,25 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            # 1️⃣ Repositoriyani yuklash
             - name: Repositoriyani yuklash
               uses: actions/checkout@v4
 
+            # 2️⃣ Node.js o'rnatish
             - name: Node.js o‘rnatish
               uses: actions/setup-node@v5
               with:
                   node-version: 22
 
+            # 3️⃣ node_modules o‘rnatish (build uchun)
             - name: node_modules'ni o‘rnatish
               run: npm ci
 
+            # 4️⃣ Build qilish
             - name: Build qilish
               run: npm run build
 
+            # 5️⃣ Serverda loyiha papkasini yaratish
             - name: Serverda loyiha papkasini yaratish
               uses: appleboy/ssh-action@v1.0.3
               with:
@@ -29,13 +34,14 @@ jobs:
                   username: ${{ secrets.SERVER_USERNAME }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   script: |
-                      if [ -d ~/${{ vars.APP_NAME }} ]; then
+                      if [ -d /root/${{ vars.APP_NAME }} ]; then
                         echo "${{ vars.APP_NAME }} papkasi mavjud"
                       else
-                        mkdir -p ~/${{ vars.APP_NAME }}
+                        mkdir -p /root/${{ vars.APP_NAME }}
                         echo "${{ vars.APP_NAME }} papkasi yaratildi"
                       fi
 
+            # 6️⃣ dist papkasini serverga yuklash
             - name: dist papkasini serverga yuklash
               uses: appleboy/scp-action@v0.1.4
               with:
@@ -43,7 +49,7 @@ jobs:
                   host: ${{ secrets.SERVER_HOST }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   source: "dist/*"
-                  target: "~/${{ vars.APP_NAME }}"
+                  target: "/root/${{ vars.APP_NAME }}"
                   port: 22
                   debug: true
 
@@ -54,10 +60,11 @@ jobs:
                   host: ${{ secrets.SERVER_HOST }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   source: ".env.example"
-                  target: "~/${{ vars.APP_NAME }}"
+                  target: "/root/${{ vars.APP_NAME }}"
                   port: 22
                   debug: true
 
+            # 7️⃣ .env faylni yaratish
             - name: .env faylni yaratish
               uses: appleboy/ssh-action@v1.0.3
               with:
@@ -65,26 +72,38 @@ jobs:
                   username: ${{ secrets.SERVER_USERNAME }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   script: |
-                      cd ~/${{vars.APP_NAME}}
+                      cd /root/${{ vars.APP_NAME }}
                       cp .env.example .env
                       sed -i \
                       -e "s|^PORT=.*|PORT=${{ vars.PORT }}|" \
                       -e "s|^APP_NAME=.*|APP_NAME=${{ vars.APP_NAME }}|" \
                       -e "s|^DATABASE_URL=.*|DATABASE_URL=${{ secrets.DATABASE_URL }}|" \
                       -e "s|^ACCESS_TOKEN_SECRET=.*|ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}|" \
-                      -e "s|^ACCESS_TOKEN_EXPIRES_IN=.*|ACCESS_TOKEN_EXPIRES_IN=${{secrets.ACCESS_TOKEN_EXPIRES_IN}}" \
-                      -e "s|^REFRESH_TOKEN_SECRET=.*|REFRESH_TOKEN_SECRET=${{ vars.REFRESH_TOKEN_SECRET }}|" \
-                      -e "s|^REFRESH_TOKEN_EXPIRES_IN=.*|REFRESH_TOKEN_EXPIRES_IN=${{ vars.REFRESH_TOKEN_EXPIRES_IN }}|" \
+                      -e "s|^ACCESS_TOKEN_EXPIRES_IN=.*|ACCESS_TOKEN_EXPIRES_IN=${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}|" \
+                      -e "s|^REFRESH_TOKEN_SECRET=.*|REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}|" \
+                      -e "s|^REFRESH_TOKEN_EXPIRES_IN=.*|REFRESH_TOKEN_EXPIRES_IN=${{ secrets.REFRESH_TOKEN_EXPIRES_IN }}|" \
                       .env
 
-            - name: PM2 bilan loyihani ishga tushirish / restart
+            # 8️⃣ Serverda node_modules o'rnatish (faqat production)
+            - name: Serverda node_modules o'rnatish
               uses: appleboy/ssh-action@v1.0.3
               with:
                   host: ${{ secrets.SERVER_HOST }}
                   username: ${{ secrets.SERVER_USERNAME }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   script: |
-                      cd ~/${{ vars.APP_NAME }}
+                      cd /root/${{ vars.APP_NAME }}
+                      npm ci --omit=dev
+
+            # 9️⃣ PM2 bilan loyiha ishga tushirish / restart
+            - name: PM2 bilan loyiha ishga tushirish / restart
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.SERVER_HOST }}
+                  username: ${{ secrets.SERVER_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  script: |
+                      cd /root/${{ vars.APP_NAME }}
 
                       # Agar .env mavjud bo'lmasa, build ishlamaydi
                       if [ ! -f .env ]; then
