@@ -63,9 +63,7 @@ jobs:
                   username: ${{ secrets.SERVER_USERNAME }}
                   host: ${{ secrets.SERVER_HOST }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  source: |
-                      package.json
-                      package-lock.json
+                  source: "package.json, package-lock.json"
                   target: "/root/${{ vars.APP_NAME }}"
                   port: 22
                   debug: true
