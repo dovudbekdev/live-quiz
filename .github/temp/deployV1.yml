@@ -41,20 +41,48 @@ jobs:
                         echo "${{ vars.APP_NAME }} papkasi yaratildi"
                       fi
 
-            # Kerakli fayl va papkalarni serverga yuklash
+            # dist papkasini serverga yuklash
             - name: dist papkasini serverga yuklash
               uses: appleboy/scp-action@v0.1.4
               with:
                   username: ${{ secrets.SERVER_USERNAME }}
                   host: ${{ secrets.SERVER_HOST }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  source: "package.json, package-lock.json, dist/*"
+                  source: "dist/*"
                   target: "/root/${{ vars.APP_NAME }}"
                   port: 22
                   debug: true
 
-            # Serverda .env faylni secrets orqali yaratish
-            - name: Serverda .env faylni yaratish
+            - name: List current directory
+              run: ls -la
+
+            # package.json va package-lock.json fayllarini serverga yuklash
+            - name: package.json va package-lock.json fayllarni serverga yuborish
+              uses: appleboy/scp-action@v0.1.4
+              with:
+                  username: ${{ secrets.SERVER_USERNAME }}
+                  host: ${{ secrets.SERVER_HOST }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  source: "package.json, package-lock.json"
+                  target: "/root/${{ vars.APP_NAME }}"
+                  port: 22
+                  debug: true
+                  overwrite: true
+
+            # .env.example faylni serverga yuklash
+            - name: .env.example faylni serverga yuborish
+              uses: appleboy/scp-action@v0.1.4
+              with:
+                  username: ${{ secrets.SERVER_USERNAME }}
+                  host: ${{ secrets.SERVER_HOST }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  source: ".env.example"
+                  target: "/root/${{ vars.APP_NAME }}"
+                  port: 22
+                  debug: true
+
+            # .env faylni yaratish
+            - name: .env faylni yaratish
               uses: appleboy/ssh-action@v1.0.3
               with:
                   host: ${{ secrets.SERVER_HOST }}
@@ -62,13 +90,16 @@ jobs:
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   script: |
                       cd /root/${{ vars.APP_NAME }}
-                      echo "PORT=${{ vars.PORT }}" > .env
-                      echo "APP_NAME=${{ vars.APP_NAME }}" >> .env
-                      echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-                      echo "ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}" >> .env
-                      echo "ACCESS_TOKEN_EXPIRES_IN=${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}" >> .env
-                      echo "REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}" >> .env
-                      echo "REFRESH_TOKEN_EXPIRES_IN=${{ secrets.REFRESH_TOKEN_EXPIRES_IN }}" >> .env
+                      cp .env.example .env
+                      sed -i \
+                      -e "s|^PORT=.*|PORT=${{ vars.PORT }}|" \
+                      -e "s|^APP_NAME=.*|APP_NAME=${{ vars.APP_NAME }}|" \
+                      -e "s|^DATABASE_URL=.*|DATABASE_URL=${{ secrets.DATABASE_URL }}|" \
+                      -e "s|^ACCESS_TOKEN_SECRET=.*|ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}|" \
+                      -e "s|^ACCESS_TOKEN_EXPIRES_IN=.*|ACCESS_TOKEN_EXPIRES_IN=${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}|" \
+                      -e "s|^REFRESH_TOKEN_SECRET=.*|REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}|" \
+                      -e "s|^REFRESH_TOKEN_EXPIRES_IN=.*|REFRESH_TOKEN_EXPIRES_IN=${{ secrets.REFRESH_TOKEN_EXPIRES_IN }}|" \
+                      .env
 
             # Serverda node_modules o'rnatish (faqat production)
             - name: Serverda node_modules o'rnatish
@@ -90,6 +121,12 @@ jobs:
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   script: |
                       cd /root/${{ vars.APP_NAME }}
+
+                      # Agar .env mavjud bo'lmasa, build ishlamaydi
+                      if [ ! -f .env ]; then
+                        echo ".env fayl topilmadi! Iltimos, .env yaratilsin."
+                        exit 1
+                      fi
 
                       # PM2'ni tekshirish, agar o'rnatilmagan bo'lsa global o'rnatish
                       if ! command -v pm2 &> /dev/null
