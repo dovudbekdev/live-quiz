@@ -10,8 +10,8 @@ import { PasswordService } from '@common/services';
 import { LoginDto } from './dto/login.dto';
 import { TokenService } from '@common/services/index';
 import { IJwtPayload } from '@common/interfaces';
-import { Teachers } from '../../../generated/prisma/client';
 import { PrismaService } from '@modules/prisma/prisma.service';
+import { Teachers } from '@prisma/client';
 
 @Injectable()
 export class AuthService {

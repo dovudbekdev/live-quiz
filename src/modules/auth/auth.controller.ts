@@ -13,10 +13,10 @@ import { RegisterDto } from './dto/register.dto';
 import { ResponseData } from '@common/utils/index';
 import { LoginDto } from './dto/login.dto';
 import { TokenService } from '@common/services';
-import { Teachers } from '../../../generated/prisma/client';
 // import { RefreshTokenGuard } from '@common/guards';
 // import { CurrentUser } from '@common/decorators';
 import { AuthenticationRequest, IJwtPayload } from '@common/interfaces';
+import { Teachers } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
