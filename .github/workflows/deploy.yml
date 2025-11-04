@@ -1,4 +1,4 @@
-name: Deploy to Server
+name: Deploy to Server (Prisma project)
 
 on:
   workflow_dispatch:
@@ -12,15 +12,19 @@ jobs:
       - name: Repositoriyani yuklash
         uses: actions/checkout@v4
 
-      # Node.js o'rnatish
+      # Node.js o‘rnatish
       - name: Node.js o‘rnatish
         uses: actions/setup-node@v5
         with:
           node-version: 22
 
-      # node_modules o‘rnatish (build uchun)
+      # node_modules o‘rnatish
       - name: node_modules'ni o‘rnatish
         run: npm ci
+
+      # Prisma client generatsiya qilish
+      - name: Prisma client generate
+        run: npx prisma generate
 
       # Build qilish
       - name: Build qilish
@@ -41,14 +45,14 @@ jobs:
               echo "${{ vars.APP_NAME }} papkasi yaratildi"
             fi
 
-      # Kerakli fayl va papkalarni serverga yuklash
-      - name: dist papkasini serverga yuklash
+      # dist va Prisma fayllarni serverga yuklash
+      - name: dist va Prisma fayllarni serverga yuklash
         uses: appleboy/scp-action@v0.1.4
         with:
           username: ${{ secrets.SERVER_USERNAME }}
           host: ${{ secrets.SERVER_HOST }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "package.json, package-lock.json, dist/*"
+          source: "package.json, package-lock.json, dist/*, prisma/*"
           target: "/root/${{ vars.APP_NAME }}"
           port: 22
           debug: true
@@ -70,21 +74,29 @@ jobs:
             echo "REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}" >> .env
             echo "REFRESH_TOKEN_EXPIRES_IN=${{ secrets.REFRESH_TOKEN_EXPIRES_IN }}" >> .env
 
-      # Serverda node_modules o'rnatish (faqat production)
-      - name: Serverda node_modules o'rnatish
+      # Serverda node_modules o‘rnatish
+      - name: Serverda node_modules o‘rnatish
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # NVM orqali o‘rnatilgan node va npm path qo‘shish
             export PATH=$PATH:/root/.nvm/versions/node/v24.11.0/bin
-
             cd /root/${{ vars.APP_NAME }}
-
-            # Production dependencies o‘rnatish
             npm install --omit=dev
+
+      # Prisma migratsiyalarni qo‘llash
+      - name: Prisma migrate deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            export PATH=$PATH:/root/.nvm/versions/node/v24.11.0/bin
+            cd /root/${{ vars.APP_NAME }}
+            npx prisma migrate deploy
 
       # PM2 bilan loyiha ishga tushirish / restart
       - name: PM2 bilan loyiha ishga tushirish / restart
@@ -94,22 +106,19 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # NVM orqali o‘rnatilgan node va npm path qo‘shish
             export PATH=$PATH:/root/.nvm/versions/node/v24.11.0/bin
-
             cd /root/${{ vars.APP_NAME }}
 
-            # PM2'ni tekshirish, agar o'rnatilmagan bo'lsa global o'rnatish
+            # PM2 o‘rnatilganini tekshirish
             if ! command -v pm2 &> /dev/null
             then
                 echo "PM2 topilmadi, global o'rnatilyapti..."
                 npm i -g pm2
             fi
 
-            # PM2 process nomi (deploy nomi)
             APP_NAME="${{ vars.APP_NAME }}"
 
-            # Agar process mavjud bo'lsa, restart qiladi, yo'q bo'lsa, yangi start
+            # Process mavjud bo‘lsa restart, yo‘q bo‘lsa yangi start
             if pm2 list | grep -q "$APP_NAME"; then
                 echo "PM2 process topildi, restart qilinmoqda..."
                 pm2 restart "$APP_NAME"
@@ -118,5 +127,5 @@ jobs:
                 pm2 start dist/main.js --name "$APP_NAME" --env production
             fi
 
-            # PM2 processlarini saqlash (server restartdan keyin ham ishga tushishi uchun)
+            # PM2 holatini saqlash
             pm2 save
