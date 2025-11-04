@@ -22,6 +22,10 @@ jobs:
       - name: node_modules'ni o‘rnatish
         run: npm ci
 
+      # Prisma client generatsiya qilish
+      - name: Prisma client generate
+        run: npx prisma generate
+
       # Build qilish
       - name: Build qilish
         run: npm run build
@@ -94,7 +98,6 @@ jobs:
             cd /root/${{ vars.APP_NAME }}
             npm install -D prisma
             npx prisma migrate deploy
-            npx prisma generate
 
       # PM2 bilan loyiha ishga tushirish / restart
       - name: PM2 bilan loyiha ishga tushirish / restart
