@@ -8,25 +8,25 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            # 1️⃣ Repositoriyani yuklash
+            # Repositoriyani yuklash
             - name: Repositoriyani yuklash
               uses: actions/checkout@v4
 
-            # 2️⃣ Node.js o'rnatish
+            # Node.js o'rnatish
             - name: Node.js o‘rnatish
               uses: actions/setup-node@v5
               with:
                   node-version: 22
 
-            # 3️⃣ node_modules o‘rnatish (build uchun)
+            # node_modules o‘rnatish (build uchun)
             - name: node_modules'ni o‘rnatish
               run: npm ci
 
-            # 4️⃣ Build qilish
+            # Build qilish
             - name: Build qilish
               run: npm run build
 
-            # 5️⃣ Serverda loyiha papkasini yaratish
+            # Serverda loyiha papkasini yaratish
             - name: Serverda loyiha papkasini yaratish
               uses: appleboy/ssh-action@v1.0.3
               with:
@@ -41,7 +41,7 @@ jobs:
                         echo "${{ vars.APP_NAME }} papkasi yaratildi"
                       fi
 
-            # 6️⃣ dist papkasini serverga yuklash
+            # dist papkasini serverga yuklash
             - name: dist papkasini serverga yuklash
               uses: appleboy/scp-action@v0.1.4
               with:
@@ -53,6 +53,21 @@ jobs:
                   port: 22
                   debug: true
 
+            # package.json va package-lock.json fayllarini serverga yuklash
+            - name: package.json va package-lock.json fayllarni serverga yuborish
+              uses: appleboy/scp-action@v0.1.4
+              with:
+                  username: ${{ secrets.SERVER_USERNAME }}
+                  host: ${{ secrets.SERVER_HOST }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  source: |
+                      package.json
+                      package-lock.json
+                  target: "/root/${{ vars.APP_NAME }}"
+                  port: 22
+                  debug: true
+
+            # .env.example faylni serverga yuklash
             - name: .env.example faylni serverga yuborish
               uses: appleboy/scp-action@v0.1.4
               with:
@@ -64,7 +79,7 @@ jobs:
                   port: 22
                   debug: true
 
-            # 7️⃣ .env faylni yaratish
+            # .env faylni yaratish
             - name: .env faylni yaratish
               uses: appleboy/ssh-action@v1.0.3
               with:
@@ -84,7 +99,7 @@ jobs:
                       -e "s|^REFRESH_TOKEN_EXPIRES_IN=.*|REFRESH_TOKEN_EXPIRES_IN=${{ secrets.REFRESH_TOKEN_EXPIRES_IN }}|" \
                       .env
 
-            # 8️⃣ Serverda node_modules o'rnatish (faqat production)
+            # Serverda node_modules o'rnatish (faqat production)
             - name: Serverda node_modules o'rnatish
               uses: appleboy/ssh-action@v1.0.3
               with:
@@ -95,7 +110,7 @@ jobs:
                       cd /root/${{ vars.APP_NAME }}
                       npm ci --omit=dev
 
-            # 9️⃣ PM2 bilan loyiha ishga tushirish / restart
+            # PM2 bilan loyiha ishga tushirish / restart
             - name: PM2 bilan loyiha ishga tushirish / restart
               uses: appleboy/ssh-action@v1.0.3
               with:
