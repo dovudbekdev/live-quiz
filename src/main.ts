@@ -12,6 +12,9 @@ async function bootstrap() {
   const configServie = app.get(ConfigService);
   const PORT = configServie.get<number>('app.port', 4000);
 
+  // Cors
+  app.enableCors();
+
   // Set api prefix
   app.setGlobalPrefix(apiPrefix);
 
