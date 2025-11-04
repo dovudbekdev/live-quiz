@@ -75,7 +75,7 @@ jobs:
         env:
           HOST: ${{vars.HOST}}
           USER: ${{vars.USER}}
-        run: ssh $USER@$HOST "npm install"
+        run: ssh $USER@$HOST "cd ~/${{vars.APP_NAME}} && npm install"
         shell: bash
 
       # PM2 bilan loyiha ishga tushirish / restart
