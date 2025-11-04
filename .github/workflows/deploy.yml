@@ -44,3 +44,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "dist/*"
           target: "~/${{ vars.APP_NAME }}"
+          port: 22
+          debug: true
