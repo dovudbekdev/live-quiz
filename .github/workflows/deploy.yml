@@ -96,6 +96,7 @@ jobs:
           script: |
             export PATH=$PATH:/root/.nvm/versions/node/v24.11.0/bin
             cd /root/${{ vars.APP_NAME }}
+            npm install -D prisma
             npx prisma migrate deploy
 
       # PM2 bilan loyiha ishga tushirish / restart
