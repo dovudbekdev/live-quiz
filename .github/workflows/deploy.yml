@@ -53,6 +53,9 @@ jobs:
                   port: 22
                   debug: true
 
+            - name: List current directory
+              run: ls -la
+
             # package.json va package-lock.json fayllarini serverga yuklash
             - name: package.json va package-lock.json fayllarni serverga yuborish
               uses: appleboy/scp-action@v0.1.4
