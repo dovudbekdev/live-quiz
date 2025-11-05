@@ -43,6 +43,12 @@ export class UserService {
     return student;
   }
 
+  findOneTeacherWithPhoneNumber(phoneNumber: string) {
+    return this.prisma.teachers.findUnique({
+      where: { phoneNumber },
+    });
+  }
+
   async changePassword(id: number, dto: ChangePasswordDto) {
     const existingUser = await this.profile(id);
 

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -53,6 +54,18 @@ export class QuizService {
       throw new NotFoundException('Bunday viktorina mavjud emas');
     }
     return quiz;
+  }
+
+  async findOneQuizByRoomCode(roomCode: string) {
+    const existingQuiz = await this.prisma.quizzes.findUnique({
+      where: { roomCode },
+    });
+
+    if (!existingQuiz || !existingQuiz.isActive) {
+      throw new BadRequestException('Quiz active emas yoki mavjud emas');
+    }
+
+    return existingQuiz;
   }
 
   async activateQuiz(id: number, userId: number) {

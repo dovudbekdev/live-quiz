@@ -83,6 +83,17 @@ export class QuizController {
     });
   }
 
+  @Get(':roomCode')
+  async findOneQuizByRoomCode(@Param('roomCode') roomCode: string) {
+    const quiz = await this.quizService.findOneQuizByRoomCode(roomCode);
+    return new ResponseData<Quizzes>({
+      success: true,
+      message: "Quiz ma'lumotlari",
+      statusCode: HttpStatus.OK,
+      data: quiz,
+    });
+  }
+
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
   @Patch('activate/:id')
