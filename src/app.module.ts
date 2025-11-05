@@ -9,6 +9,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { QuizModule } from './modules/quiz/quiz.module';
 import { QuestionModule } from './modules/question/question.module';
 import { AnswerModule } from './modules/answer/answer.module';
+import { GatewayModule } from './modules/gateway/gateway.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AnswerModule } from './modules/answer/answer.module';
     // UserModule,
     // AnswerModule,
     PrismaModule,
+    GatewayModule,
   ],
 })
 export class AppModule {}

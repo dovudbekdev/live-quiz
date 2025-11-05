@@ -83,10 +83,20 @@ export class QuizController {
     });
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateQuizDto: UpdateQuizDto) {
-  //   return this.quizService.update(+id, updateQuizDto);
-  // }
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard)
+  @Patch('activate/:id')
+  async activateQuiz(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser('userId', ParseIntPipe) userId: number,
+  ) {
+    await this.quizService.activateQuiz(id, userId);
+    return new ResponseData<null>({
+      success: true,
+      message: 'Viktorina (quiz) activlashtirildi',
+      statusCode: HttpStatus.OK,
+    });
+  }
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard)

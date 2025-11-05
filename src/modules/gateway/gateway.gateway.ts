@@ -1,0 +1,81 @@
+import {
+  WebSocketGateway,
+  SubscribeMessage,
+  MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  WebSocketServer,
+  ConnectedSocket,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { GatewayService } from './gateway.service';
+import { SOCKET } from '@common/enums';
+import { JoinRoomDto } from './dto/join-room.dto';
+import { PrismaService } from '@modules/prisma/prisma.service';
+
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+})
+export class GatewayGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
+  @WebSocketServer()
+  server: Server;
+  constructor(
+    private readonly gatewayService: GatewayService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  async handleConnection(client: Socket) {
+    console.log('Client connected: ', client.id);
+  }
+
+  async handleDisconnect(client: Socket) {
+    console.log('Client disconnected: ', client.id);
+    // socket_id bo‘yicha studentni topib o‘chirish yoki holatini yangilash mumkin
+  }
+
+  @SubscribeMessage(SOCKET.JOIN_ROOM)
+  async joinRoom(
+    @MessageBody() joinRoomDto: JoinRoomDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      console.log({ joinRoomDto });
+
+      const studentData = await this.gatewayService.joinRoom(
+        joinRoomDto,
+        client,
+      );
+      if (!studentData) {
+        return;
+      }
+      const { student, students } = studentData;
+
+      // Client'ni xonaga qo'shamiz
+      client.join(joinRoomDto.roomCode);
+
+      // Barcha foydalanuvchilarga yangilangan ro'yxatni yuboramiz
+      this.server
+        .to(joinRoomDto.roomCode)
+        .emit(SOCKET.STUDENT_LIST_UPDATE, students);
+
+      client.emit(SOCKET.JOINED_ROOM, {
+        message: 'Xonaga muvaffaqiyatli qo‘shildingiz',
+        student,
+      });
+    } catch (error) {
+      console.log('socket error', error);
+    }
+  }
+
+  // 🔹 O‘qituvchi yoki tizim tomonidan quiz boshlanishi
+  @SubscribeMessage('startQuiz')
+  async handleStartQuiz(@MessageBody() data: { roomCode: string }) {
+    this.server
+      .to(data.roomCode)
+      .emit('quizStarted', { message: 'Quiz boshlandi!' });
+  }
+}

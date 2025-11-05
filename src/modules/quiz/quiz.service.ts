@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
@@ -46,9 +50,24 @@ export class QuizService {
     return quiz;
   }
 
-  // update(id: number, updateQuizDto: UpdateQuizDto) {
-  //   return `This action updates a #${id} quiz`;
-  // }
+  async activateQuiz(id: number, userId: number) {
+    // Activlashtirayotgan teacher'ga quiz tegishlimi yo'qmi aniqlab olish
+    const existingQuiz = await this.findOne(id);
+
+    if (existingQuiz.teacherId !== userId) {
+      throw new ForbiddenException(
+        "Bu viktorina (quiz)'ni activlashtirish uchun sizda ruxsat yo'q",
+      );
+    }
+
+    await this.prisma.quizzes.update({
+      where: { id },
+      data: {
+        isActive: true,
+      },
+    });
+    return true;
+  }
 
   async remove(id: number) {
     await this.findOne(id);
