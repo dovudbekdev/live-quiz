@@ -21,7 +21,7 @@ import { GatewayModule } from './modules/gateway/gateway.module';
     AuthModule,
     QuizModule,
     QuestionModule,
-    // UserModule,
+    UserModule,
     // AnswerModule,
     PrismaModule,
     GatewayModule,

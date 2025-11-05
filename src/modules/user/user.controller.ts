@@ -1,34 +1,51 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpStatus,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { ResponseData } from '@common/utils';
+import { Students } from '@prisma/client';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
-  }
-
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  async findAll() {
+    const students = await this.userService.findAll();
+    return new ResponseData<Students[]>({
+      success: true,
+      message: "Studentlar ma'lumotlari",
+      statusCode: HttpStatus.OK,
+      data: students,
+    });
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const student = await this.userService.findOne(+id);
+    return new ResponseData<Students>({
+      success: true,
+      message: "Student ma'lumoti",
+      statusCode: HttpStatus.OK,
+      data: student,
+    });
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.userService.remove(+id);
+    return new ResponseData<null>({
+      success: true,
+      message: "Student ma'lumoti muvaffaqiyatli o'chirildi",
+      statusCode: HttpStatus.OK,
+    });
   }
 }

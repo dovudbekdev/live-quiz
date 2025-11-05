@@ -12,6 +12,7 @@ import { GatewayService } from './gateway.service';
 import { SOCKET } from '@common/enums';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
+import { StudentAnswerDto } from './dto/student-answer.dto';
 
 @WebSocketGateway({
   cors: {
@@ -37,6 +38,7 @@ export class GatewayGateway
     // socket_id bo‘yicha studentni topib o‘chirish yoki holatini yangilash mumkin
   }
 
+  // O'quvchilarni xonalarga qo'shish
   @SubscribeMessage(SOCKET.JOIN_ROOM)
   async joinRoom(
     @MessageBody() joinRoomDto: JoinRoomDto,
@@ -60,7 +62,7 @@ export class GatewayGateway
       // Barcha foydalanuvchilarga yangilangan ro'yxatni yuboramiz
       this.server
         .to(joinRoomDto.roomCode)
-        .emit(SOCKET.STUDENT_LIST_UPDATE, students);
+        .emit(SOCKET.STUDENT_LIST_UPDATE, { students });
 
       client.emit(SOCKET.JOINED_ROOM, {
         message: 'Xonaga muvaffaqiyatli qo‘shildingiz',
@@ -68,14 +70,53 @@ export class GatewayGateway
       });
     } catch (error) {
       console.log('socket error', error);
+      client.emit(SOCKET.ERROR, {
+        message: error.message ? error.message : error,
+      });
     }
   }
 
   // 🔹 O‘qituvchi yoki tizim tomonidan quiz boshlanishi
-  @SubscribeMessage('startQuiz')
-  async handleStartQuiz(@MessageBody() data: { roomCode: string }) {
-    this.server
-      .to(data.roomCode)
-      .emit('quizStarted', { message: 'Quiz boshlandi!' });
+  @SubscribeMessage(SOCKET.START_QUIZ)
+  async startQuiz(@ConnectedSocket() client: Socket) {
+    try {
+      const quiz = await this.gatewayService.startQuiz(client);
+
+      if (!quiz) return;
+
+      this.server.to(quiz.roomCode).emit(SOCKET.QUIZ_LIST, { quiz });
+    } catch (error) {
+      console.log('socket error:', error);
+      client.emit(SOCKET.ERROR, {
+        message: error.message ? error.message : error,
+      });
+    }
+  }
+
+  // Foydalanuvchi savolga javob berishni boshlash
+  @SubscribeMessage(SOCKET.ANSWER)
+  async studentAnswer(
+    @MessageBody() studentAnswerDto: StudentAnswerDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const studentAnswerData = await this.gatewayService.studentAnswer(
+        studentAnswerDto,
+        client,
+      );
+
+      if (!studentAnswerData) return;
+
+      const { student, answer } = studentAnswerData;
+
+      this.server
+        .to(student.quiz.roomCode)
+        .emit(SOCKET.ANSWER_IS_CORRECT, { isCorrect: answer.isCorrect });
+    } catch (error) {
+      console.log('Socker error: ', error);
+      client.emit(SOCKET.ERROR, {
+        message: error.message ? error.message : error,
+      });
+    }
   }
 }
