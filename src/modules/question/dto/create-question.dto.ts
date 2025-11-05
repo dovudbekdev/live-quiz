@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-export class CreateOptionDto {
+export class OptionDto {
   @ApiProperty({ example: 'Dasturlash tili', description: 'Variant matni' })
   @IsString()
   @IsNotEmpty()
@@ -26,15 +26,7 @@ export class CreateOptionDto {
   isCorrect: boolean;
 }
 
-export class CreateQuestionDto {
-  @ApiProperty({
-    type: Number,
-    example: 1,
-    description: "Viktorina ID'si",
-  })
-  @IsInt()
-  quizId: number;
-
+export class QuestionDto {
   @ApiProperty({
     type: String,
     example: 'Node.js nima ?',
@@ -43,11 +35,39 @@ export class CreateQuestionDto {
   questionText: string;
 
   @ApiProperty({
-    type: [CreateOptionDto],
+    type: [OptionDto],
     description: 'Savol variantlari (options)',
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateOptionDto)
-  options: CreateOptionDto[];
+  @Type(() => OptionDto)
+  options: OptionDto[];
+}
+
+export class CreateQuestionWithOptionsDto {
+  @ApiProperty({
+    type: 'string',
+    example: "Node.js bo'yicha savollar",
+    description: 'Quiz title',
+  })
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @ApiProperty({
+    type: 'integer',
+    example: 1,
+    description: "Viktorina ID'si",
+  })
+  @IsInt()
+  quizId: number;
+
+  @ApiProperty({
+    type: [QuestionDto],
+    description: 'Variant savollari (questions)',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => QuestionDto)
+  questions: QuestionDto[];
 }

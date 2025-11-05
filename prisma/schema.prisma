@@ -50,6 +50,7 @@ model Students {
 model Quizzes {
   id        Int      @id @default(autoincrement())
   teacherId Int      @map("teacher_id")
+  title     String?  @unique
   type      QuizType
   roomCode  String   @unique @map("room_code")
   isActive  Boolean  @default(false) @map("is_active")
@@ -60,7 +61,6 @@ model Quizzes {
 
   teacher Teachers @relation(fields: [teacherId], references: [id])
 
-  @@unique([teacherId, type]) // har bir teacher faqat bitta quiz type bo'lishi mumkin
   @@map("quizzes")
 }
 

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { QuizType } from '@prisma/client';
 import { IsEnum } from 'class-validator';
 
@@ -10,4 +10,9 @@ export class CreateQuizDto {
   })
   @IsEnum(QuizType)
   type: QuizType;
+
+  @ApiPropertyOptional({
+    type: String,
+  })
+  title?: string;
 }

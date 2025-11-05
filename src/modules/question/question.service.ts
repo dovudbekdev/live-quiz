@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateQuestionDto } from './dto/create-question.dto';
+import { CreateQuestionWithOptionsDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { QuizService } from '@modules/quiz/quiz.service';
@@ -16,43 +16,40 @@ export class QuestionService {
     private readonly quizService: QuizService,
   ) {}
 
-  async createQuestionWithOptions(createQuestionDto: CreateQuestionDto) {
+  async createQuestionWithOptions(
+    createQuestionDto: CreateQuestionWithOptionsDto,
+  ) {
     await this.quizService.findOne(createQuestionDto.quizId);
 
     return this.prisma.$transaction(async (tx) => {
       try {
-        // Savol yaratish
-        const question = await tx.questions.create({
-          data: {
-            quizId: createQuestionDto.quizId,
-            questionText: createQuestionDto.questionText,
-          },
+        // Quiz'ga title qo'shish
+        await tx.quizzes.update({
+          where: { id: createQuestionDto.quizId },
+          data: { title: createQuestionDto.title },
         });
 
-        // options (variantlar) dan yangi massiv yasaymiz
-        const answerData = createQuestionDto.options.map((option) => ({
-          questionId: question.id, // bu joyda yangi questionId biriktiriladi
-          answerText: option.answerText, // foydalanuvchidan kelgan matn
-          isCorrect: option.isCorrect ?? false, // agar isCorrect yuborilmasa, default false
-        }));
+        for (let question of createQuestionDto.questions) {
+          const createdQuestion = await tx.questions.create({
+            data: {
+              quizId: createQuestionDto.quizId,
+              questionText: question.questionText,
+            },
+          });
 
-        // Variantlarni yaratish
-        await tx.answers.createMany({
-          data: answerData,
-        });
+          const answerData = question.options.map((option) => ({
+            questionId: createdQuestion.id,
+            answerText: option.answerText,
+            isCorrect: option.isCorrect ?? false,
+          }));
 
-        const foundQuestionWithOptions = await tx.questions.findUnique({
-          where: { id: question.id },
-          include: {
-            answers: true, // answers jadvalidan barcha variantlarni qo‘shamiz
-          },
-        });
-
-        if (!foundQuestionWithOptions) {
-          throw new NotFoundException("Bunday ID'li savol mavjud emas");
+          // Variantlarni yaratish
+          await tx.answers.createMany({
+            data: answerData,
+          });
         }
 
-        return foundQuestionWithOptions;
+        return true;
       } catch (error) {
         // 🧠 Prisma ma'lumotlar bazasi xatolarini ajratish
         if (error.code === 'P2003') {
@@ -77,11 +74,14 @@ export class QuestionService {
   }
 
   findAll() {
-    return this.prisma.questions.findMany();
+    return this.prisma.questions.findMany({ include: { answers: true } });
   }
 
   async findOne(id: number) {
-    const question = await this.prisma.questions.findUnique({ where: { id } });
+    const question = await this.prisma.questions.findUnique({
+      where: { id },
+      include: { answers: true },
+    });
 
     if (!question) {
       throw new NotFoundException("Bunday ID'li savol mavjud emas");

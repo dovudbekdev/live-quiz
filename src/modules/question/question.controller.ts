@@ -12,7 +12,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { QuestionService } from './question.service';
-import { CreateQuestionDto } from './dto/create-question.dto';
+import { CreateQuestionWithOptionsDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { ResponseData } from '@common/utils';
 import { Answers, Questions } from '@prisma/client';
@@ -33,7 +33,7 @@ export class QuestionController {
   // @UseGuards(AuthGuard)
   @Post()
   async create(
-    @Body() createQuestionDto: CreateQuestionDto,
+    @Body() createQuestionDto: CreateQuestionWithOptionsDto,
     @CurrentUser('userId', ParseIntPipe) teacherId: number,
   ) {
     const quiz = await this.quizService.findOne(createQuestionDto.quizId);
@@ -44,14 +44,13 @@ export class QuestionController {
       );
     }
 
-    const newQuestion =
-      await this.questionService.createQuestionWithOptions(createQuestionDto);
+    await this.questionService.createQuestionWithOptions(createQuestionDto);
 
-    return new ResponseData<Questions & { answers: Answers[] }>({
+    return new ResponseData<null>({
       success: true,
       message: 'Savol muvaffaqiyatli yaratildi',
       statusCode: HttpStatus.CREATED,
-      data: newQuestion,
+      data: null,
     });
   }
 

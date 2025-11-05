@@ -29,6 +29,7 @@ CREATE TABLE "students" (
 CREATE TABLE "quizzes" (
     "id" SERIAL NOT NULL,
     "teacher_id" INTEGER NOT NULL,
+    "title" TEXT,
     "type" "QuizType" NOT NULL,
     "room_code" TEXT NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT false,
@@ -83,10 +84,10 @@ CREATE TABLE "results" (
 CREATE UNIQUE INDEX "teachers_phone_number_key" ON "teachers"("phone_number");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "quizzes_room_code_key" ON "quizzes"("room_code");
+CREATE UNIQUE INDEX "quizzes_title_key" ON "quizzes"("title");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "quizzes_teacher_id_type_key" ON "quizzes"("teacher_id", "type");
+CREATE UNIQUE INDEX "quizzes_room_code_key" ON "quizzes"("room_code");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "results_student_id_key" ON "results"("student_id");
