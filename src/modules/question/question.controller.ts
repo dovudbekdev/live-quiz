@@ -15,7 +15,7 @@ import { QuestionService } from './question.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { ResponseData } from '@common/utils';
-import { Questions } from '@prisma/client';
+import { Answers, Questions } from '@prisma/client';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@common/guards';
 import { CurrentUser } from '@common/decorators';
@@ -44,8 +44,10 @@ export class QuestionController {
       );
     }
 
-    const newQuestion = await this.questionService.create(createQuestionDto);
-    return new ResponseData<Questions>({
+    const newQuestion =
+      await this.questionService.createQuestionWithOptions(createQuestionDto);
+
+    return new ResponseData<Questions & { answers: Answers[] }>({
       success: true,
       message: 'Savol muvaffaqiyatli yaratildi',
       statusCode: HttpStatus.CREATED,

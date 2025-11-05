@@ -1,5 +1,30 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsInt } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+
+export class CreateOptionDto {
+  @ApiProperty({ example: 'Dasturlash tili', description: 'Variant matni' })
+  @IsString()
+  @IsNotEmpty()
+  answerText: string;
+
+  @ApiPropertyOptional({
+    type: Boolean,
+    example: false,
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isCorrect: boolean;
+}
 
 export class CreateQuestionDto {
   @ApiProperty({
@@ -16,4 +41,13 @@ export class CreateQuestionDto {
     description: 'Savol',
   })
   questionText: string;
+
+  @ApiProperty({
+    type: [CreateOptionDto],
+    description: 'Savol variantlari (options)',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateOptionDto)
+  options: CreateOptionDto[];
 }

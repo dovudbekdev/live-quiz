@@ -19,10 +19,10 @@ import { AnswerModule } from './modules/answer/answer.module';
     JwtModule.register({ global: true }),
     AuthModule,
     QuizModule,
-    // UserModule,
-    PrismaModule,
     QuestionModule,
-    AnswerModule,
+    // UserModule,
+    // AnswerModule,
+    PrismaModule,
   ],
 })
 export class AppModule {}
