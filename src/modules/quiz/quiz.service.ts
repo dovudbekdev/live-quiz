@@ -31,7 +31,12 @@ export class QuizService {
   }
 
   findAll(userId: number) {
-    return this.prisma.quizzes.findMany({ where: { id: userId } });
+    return this.prisma.quizzes.findMany({
+      where: { id: userId },
+      include: {
+        teacher: true,
+      },
+    });
   }
 
   async findOne(id: number) {
