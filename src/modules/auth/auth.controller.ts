@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   HttpStatus,
+  Patch,
   Post,
   Req,
   Res,
@@ -17,6 +18,8 @@ import { TokenService } from '@common/services';
 // import { CurrentUser } from '@common/decorators';
 import { AuthenticationRequest, IJwtPayload } from '@common/interfaces';
 import { Teachers } from '@prisma/client';
+import { ForgotPasswordDto } from './dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -70,7 +73,26 @@ export class AuthController {
     });
   }
 
-  // @Post("forgot")
+  @Post('forgot-password')
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const resetURL = await this.authService.forgotPassword(forgotPasswordDto);
+    return new ResponseData<string>({
+      success: true,
+      message: 'Parolni yangilsh uchun botga link yuborildi',
+      statusCode: HttpStatus.OK,
+      data: resetURL,
+    });
+  }
+
+  @Patch('reset-password')
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    await this.authService.resetPassword(resetPasswordDto);
+    return new ResponseData<null>({
+      success: true,
+      message: 'Parol muvaffaqiyatli yangilandi',
+      statusCode: HttpStatus.OK,
+    });
+  }
   // @Post('logout')
   // @UseGuards(RefreshTokenGuard)
   // async logout(

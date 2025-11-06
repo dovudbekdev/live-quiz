@@ -10,6 +10,7 @@ import { QuizModule } from './modules/quiz/quiz.module';
 import { QuestionModule } from './modules/question/question.module';
 import { GatewayModule } from './modules/gateway/gateway.module';
 import { BotModule } from './modules/bot/bot.module';
+import { ResultModule } from './modules/result/result.module';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { BotModule } from './modules/bot/bot.module';
     // AnswerModule,
     PrismaModule,
     GatewayModule,
-    BotModule,
+    ResultModule,
+    // BotModule,
   ],
 })
 export class AppModule {}

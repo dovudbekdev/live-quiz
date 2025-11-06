@@ -15,6 +15,7 @@ import { PrismaService } from '@modules/prisma/prisma.service';
 import { Teachers } from '@prisma/client';
 import { ForgotPasswordDto } from './dto';
 import { ConfigService } from '@nestjs/config';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -139,6 +140,40 @@ export class AuthService {
   }
 
   /* ========== ♻️ Reset password ========== */
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(resetPasswordDto.token)
+      .digest('hex');
+
+    const existingTeacher = await this.prismaService.teachers.findFirst({
+      where: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!existingTeacher) {
+      throw new UnauthorizedException("Token noto'g'ri yoki muddati o'tgan");
+    }
+
+    const hashPassword = await this.passwordService.hash(
+      resetPasswordDto.newPassword,
+    );
+
+    await this.prismaService.teachers.update({
+      where: { id: existingTeacher.id },
+      data: {
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        password: hashPassword,
+      },
+    });
+
+    return true;
+  }
 
   /* ==========  Logaut operation ========== */
   // async logaut(currentUser: IJwtPayload): Promise<void> {
