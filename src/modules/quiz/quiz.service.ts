@@ -61,6 +61,7 @@ export class QuizService {
   async findOneQuizByRoomCode(roomCodeDto: RoomCodeDto) {
     const existingQuiz = await this.prisma.quizzes.findUnique({
       where: { roomCode: roomCodeDto.roomCode },
+      include: { teacher: true },
     });
 
     if (!existingQuiz || !existingQuiz.isActive) {
