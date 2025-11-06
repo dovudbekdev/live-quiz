@@ -35,6 +35,11 @@ export class GatewayGateway
 
   async handleDisconnect(client: Socket) {
     console.log('Client disconnected: ', client.id);
+    const socketId = client.id; // ✅ to‘g‘risi shu
+
+    await this.prisma.students.delete({
+      where: { socketId }, // ✅ bu yerda ham to‘g‘ri
+    });
     // socket_id bo‘yicha studentni topib o‘chirish yoki holatini yangilash mumkin
   }
 

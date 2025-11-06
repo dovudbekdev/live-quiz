@@ -5,15 +5,16 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import crypto from 'crypto';
+import axios from 'axios';
 import { RegisterDto } from './dto/register.dto';
 import { Tokens } from '@common/types';
 import { PasswordService } from '@common/services';
 import { LoginDto } from './dto/login.dto';
 import { TokenService } from '@common/services/index';
-import { IJwtPayload } from '@common/interfaces';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { Teachers } from '@prisma/client';
 import { ForgotPasswordDto } from './dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly prismaService: PrismaService,
     private readonly tokenService: TokenService,
     private readonly passwordService: PasswordService,
+    private readonly configService: ConfigService,
   ) {}
 
   /* ========== 🆕 Register operation ========== */
@@ -102,7 +104,38 @@ export class AuthService {
       .createHash('sha256')
       .update(resetToken)
       .digest('hex');
-    const passwordResetExpires = Date.now() + 10 * 60 * 1000;
+    const passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 min
+
+    await this.prismaService.teachers.update({
+      where: { id: existingTeacher.id },
+      data: {
+        passwordResetToken,
+        passwordResetExpires: new Date(passwordResetExpires),
+      },
+    });
+
+    const appHost = this.configService.get<string>('app.appHost', 'localhost');
+    const port = this.configService.get<number>('app.port', 4000);
+    const apiPrefix = this.configService.get<string>('app.apiPrefix');
+
+    const resetURL = `http://${appHost}:${port}/${apiPrefix}/reset-password?token=${resetToken}`;
+
+    if (!existingTeacher.telegramId) {
+      throw new UnauthorizedException(
+        'Foydalanuvchi hali botga start bosmagan',
+      );
+    }
+
+    // Bot orqali url'ni foydalanuvchiga yuborish
+    await axios.post(
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`,
+      {
+        chat_id: existingTeacher.telegramId,
+        text: `🔑 Parolingizni tiklash uchun havola:\n${resetURL}\n\n⏰ 10 daqiqa amal qiladi.`,
+      },
+    );
+
+    return resetURL;
   }
 
   /* ========== ♻️ Reset password ========== */

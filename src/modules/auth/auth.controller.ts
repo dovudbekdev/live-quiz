@@ -70,6 +70,7 @@ export class AuthController {
     });
   }
 
+  // @Post("forgot")
   // @Post('logout')
   // @UseGuards(RefreshTokenGuard)
   // async logout(
