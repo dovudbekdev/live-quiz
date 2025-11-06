@@ -70,6 +70,9 @@ jobs:
             cd /root/${{ vars.APP_NAME }}
             echo "PORT=${{ vars.PORT }}" > .env
             echo "APP_NAME=${{ vars.APP_NAME }}" >> .env
+            echo "API_PREFIX=${{vars.API_PREFIX}}" >> .env
+            echo "APP_HOST=${{secrets.SERVER_HOST}}" >> .env
+            echo "BOT_TOKEN=${{secrets.BOT_TOKEN}}" >> .env
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
             echo "ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}" >> .env
             echo "ACCESS_TOKEN_EXPIRES_IN=${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}" >> .env

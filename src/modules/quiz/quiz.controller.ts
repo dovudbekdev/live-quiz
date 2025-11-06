@@ -83,7 +83,7 @@ export class QuizController {
     });
   }
 
-  @Get(':roomCode')
+  @Get('room/:roomCode')
   async findOneQuizByRoomCode(@Param('roomCode') roomCode: string) {
     const quiz = await this.quizService.findOneQuizByRoomCode(roomCode);
     return new ResponseData<Quizzes>({

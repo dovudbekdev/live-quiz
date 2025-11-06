@@ -4,7 +4,7 @@ import { TelegrafModule } from 'nestjs-telegraf';
 import { BotUpdate } from './bot.update';
 import { UserModule } from '@modules/user/user.module';
 import { session } from 'telegraf';
-import { PasswordService } from '@common/services';
+import { AuthModule } from '@modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -13,7 +13,8 @@ import { PasswordService } from '@common/services';
       middlewares: [session()],
     }),
     UserModule,
+    AuthModule,
   ],
-  providers: [BotUpdate, BotService, PasswordService],
+  providers: [BotUpdate, BotService],
 })
 export class BotModule {}

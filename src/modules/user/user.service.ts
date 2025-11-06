@@ -3,11 +3,10 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { PasswordService } from '@common/services';
+import { UpdateTeacherDto } from './dto/update-teacher.dto';
 
 @Injectable()
 export class UserService {
@@ -69,6 +68,15 @@ export class UserService {
     });
 
     return true;
+  }
+
+  async updateTeacher(id: number, updateTeacherDto: UpdateTeacherDto) {
+    await this.profile(id);
+
+    return await this.prisma.teachers.update({
+      where: { id },
+      data: updateTeacherDto,
+    });
   }
 
   async remove(id: number) {

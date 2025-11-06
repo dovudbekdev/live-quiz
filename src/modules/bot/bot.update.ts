@@ -4,9 +4,14 @@ import { Context, Markup } from 'telegraf';
 import { UserService } from '@modules/user/user.service';
 import { BOT_STEP } from '@common/enums';
 import { PasswordService } from '@common/services';
+import { AuthService } from '@modules/auth/auth.service';
 
 interface MyContext extends Context {
-  session: { step: string; data: string };
+  session: {
+    step: string;
+    aks: string;
+    userData: { phoneNumber: string; password: string };
+  };
 }
 
 @Update()
@@ -14,7 +19,7 @@ export class BotUpdate {
   constructor(
     private readonly botService: BotService,
     private readonly userService: UserService,
-    private readonly passwordService: PasswordService,
+    private readonly authService: AuthService,
   ) {}
 
   @Start()
@@ -36,7 +41,21 @@ export class BotUpdate {
   @Action('login')
   async onLogin(@Ctx() ctx: MyContext) {
     await ctx.answerCbQuery();
-    ctx.session.step = BOT_STEP.ASK_PHONE_NUMBER;
+    ctx.session.step = BOT_STEP.LOGIN;
+    ctx.session.aks = BOT_STEP.ASK_PHONE_NUMBER;
+    await ctx.reply(
+      'Iltimos telefon raqamingizni kiriting',
+      Markup.keyboard([[Markup.button.contactRequest('Telfon raqam')]])
+        .resize()
+        .oneTime(),
+    );
+  }
+
+  @Action('register')
+  async onRegister(@Ctx() ctx: MyContext) {
+    await ctx.answerCbQuery();
+    ctx.session.step = BOT_STEP.REGISTER;
+    ctx.session.step = BOT_STEP.REGISTER;
     await ctx.reply(
       'Iltimos telefon raqamingizni kiriting',
       Markup.keyboard([[Markup.button.contactRequest('Telfon raqam')]])
@@ -49,94 +68,51 @@ export class BotUpdate {
   @On('contact')
   async onContact(@Ctx() ctx: MyContext) {
     const msg = ctx.message as any;
-
+    const step = ctx.session.step;
     const contact = msg.contact;
-
-    console.log({ contact });
 
     const foundTeacherByPhoneNumber =
       await this.userService.findOneTeacherWithPhoneNumber(
         contact.phone_number,
       );
 
-    if (!foundTeacherByPhoneNumber) {
-      return await ctx.reply("Bu telefon raqam ro'yxatdan o'tmagan");
+    if (step === BOT_STEP.LOGIN) {
+      if (!foundTeacherByPhoneNumber) {
+        return await ctx.reply("Bu telefon raqam ro'yxatdan o'tmagan");
+      }
+
+      await this.userService.updateTeacher(foundTeacherByPhoneNumber.id, {
+        telegramId: ctx.from?.id,
+      });
+
+      await ctx.reply('Tizimga muvaffaqiyatli kirdingiz');
+      return;
     }
 
-    ctx.session.step = BOT_STEP.ASK_PASSWORD;
-
-    await ctx.reply('Iltimos parolingizni kiriting');
-    // // Agar hozirgi step phone so'rovida bo'lsa yoki siz har doim qabul qilmoqchi bo'lsangiz
-    // if (ctx.session.step !== BOT_STEP.ASK_PHONE_NUMBER) {
-    //   // ixtiyoriy: noto'g'ri joyda yuborilsa xabar berish
-    //   await ctx.reply(
-    //     'Iltimos avval /start yoki login qilganingizga ishonch hosil qiling.',
-    //   );
-    //   return;
-    // }
-
-    // const contact = ctx.message;
-    // // Ba'zi hollarda contact.user_id mavjud bo'lmasligi mumkin
-    // if (contact.user_id && contact.user_id !== ctx.from.id) {
-    //   // foydalanuvchi boshqa birovning kontaktini yuborgan bo'lishi mumkin
-    //   await ctx.reply(
-    //     "Iltimos o'zingizning telefon raqamingizni yuboring (o'zingizni tanlang).",
-    //   );
-    //   return;
-    // }
-
-    // const phone = contact.phone_number; // bu yerda telefon raqami
-    // // session yoki DB ga saqlash
-    // ctx.session.data = { ...(ctx.session.data || {}), phone };
-    // ctx.session.step = BOT_STEP.DONE;
-
-    // // keyboardni olib tashlash
-    // await ctx.reply(
-    //   `Rahmat! Sizning telefon raqamingiz: ${phone}`,
-    //   Markup.removeKeyboard(),
-    // );
-
-    // // keyingi ishlar: DB ga saqlash va hokazo
-    // // await this.userService.savePhone(ctx.from.id, phone);
+    if (step === BOT_STEP.REGISTER) {
+      ctx.session.aks = BOT_STEP.ASK_PASSWORD;
+      await ctx.reply("Iltimos parol o'ylab toping");
+      return;
+    }
   }
 
   // Agar foydalanuvchi tugma bosmay to'g'ridan-to'g'ri matn sifatida yozsa
   @On('text')
   async onText(@Ctx() ctx: MyContext) {
-    const msg = ctx.message;
+    const msg = ctx.message as any;
     const step = ctx.session.step;
+    const ask = ctx.session.aks;
 
-    if (step === BOT_STEP.ASK_PASSWORD) {
+    if (ask === BOT_STEP.ASK_PASSWORD) {
+      await this.authService.register({
+        phoneNumber: ctx.session.userData.phoneNumber,
+        password: ctx.session.userData.password,
+      });
+
+      await ctx.reply("Tabriklayman siz muvaffaqiyatli ro'yxatdan o'tdingiz");
+      return;
     }
 
-    console.log('text =>', msg);
-    // ctx.session ??= {};
-
-    // if (ctx.session.step === BOT_STEP.ASK_PHONE_NUMBER) {
-    //   const text = ctx.message.text.trim();
-    //   // oddiy validatsiya: raqam va + bilan boshlanishni tekshirish
-    //   const normalized = text.replace(/[\s()-]/g, '');
-    //   const phoneRegex = /^\+?\d{7,15}$/; // moslashuvchan regex
-    //   if (!phoneRegex.test(normalized)) {
-    //     await ctx.reply(
-    //       'Noto‘g‘ri format. Iltimos +998901234567 shaklida yuboring yoki kontakt tugmasini bosing.',
-    //     );
-    //     return;
-    //   }
-
-    //   // saqlash
-    //   ctx.session.data = { ...(ctx.session.data || {}), phone: normalized };
-    //   ctx.session.step = BOT_STEP.DONE;
-
-    //   await ctx.reply(
-    //     `Rahmat! Telefon raqamingiz: ${normalized}`,
-    //     Markup.removeKeyboard(),
-    //   );
-    //   // DB ga saqlash kabilar...
-    //   return;
-    // }
-
-    // boshqa holatlar
-    await ctx.reply('Buyruqlar uchun /start yoki login tugmasini bosing.');
+    await ctx.reply('Aniqlanmagan buyruq');
   }
 }

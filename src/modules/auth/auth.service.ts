@@ -4,6 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import crypto from 'crypto';
 import { RegisterDto } from './dto/register.dto';
 import { Tokens } from '@common/types';
 import { PasswordService } from '@common/services';
@@ -12,6 +13,7 @@ import { TokenService } from '@common/services/index';
 import { IJwtPayload } from '@common/interfaces';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { Teachers } from '@prisma/client';
+import { ForgotPasswordDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -84,6 +86,26 @@ export class AuthService {
 
     return { user: foundUser, tokens };
   }
+
+  /* ========== Forgot password ========== */
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const existingTeacher = await this.prismaService.teachers.findUnique({
+      where: { phoneNumber: forgotPasswordDto.phoneNumber },
+    });
+
+    if (!existingTeacher) {
+      throw new NotFoundException("Bunday telefon raqam ro'yxatdan o'tmagan");
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const passwordResetToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+    const passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  }
+
+  /* ========== ♻️ Reset password ========== */
 
   /* ==========  Logaut operation ========== */
   // async logaut(currentUser: IJwtPayload): Promise<void> {
