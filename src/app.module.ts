@@ -27,7 +27,7 @@ import { ResultModule } from './modules/result/result.module';
     PrismaModule,
     GatewayModule,
     ResultModule,
-    // BotModule,
+    BotModule,
   ],
 })
 export class AppModule {}

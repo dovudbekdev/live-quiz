@@ -5,6 +5,7 @@ import { BotUpdate } from './bot.update';
 import { UserModule } from '@modules/user/user.module';
 import { session } from 'telegraf';
 import { AuthModule } from '@modules/auth/auth.module';
+import { PrismaModule } from '@modules/prisma/prisma.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthModule } from '@modules/auth/auth.module';
     }),
     UserModule,
     AuthModule,
+    PrismaModule,
   ],
   providers: [BotUpdate, BotService],
 })

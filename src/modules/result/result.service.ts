@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -41,6 +40,15 @@ export class ResultService {
     // Ballni hisoblash (foizlarda)
     const score = ((totalCorrect / totalQuestions) * 100).toFixed(2);
 
+    // Quzini boshlagan vaqtini aniqlash uchun
+    const quiz = await this.prisma.quizzes.findUnique({
+      where: { id: student.quizId },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException("Bunday ID'li quiz mavjud emas");
+    }
+
     //  Natijani Results jadvaliga saqlash
     const result = await this.prisma.results.create({
       data: {
@@ -48,6 +56,8 @@ export class ResultService {
         totalCorrect: totalCorrect,
         totalQuestion: totalQuestions,
         score: Number(score),
+        startedAt: quiz.startTime!,
+        finishedAt: new Date(),
       },
     });
 

@@ -13,6 +13,8 @@ import { SOCKET } from '@common/enums';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { StudentAnswerDto } from './dto/student-answer.dto';
+import { EndQuizDto } from './dto/end-quiz.dto';
+import { BotService } from '@modules/bot/bot.service';
 
 @WebSocketGateway({
   cors: {
@@ -81,7 +83,7 @@ export class GatewayGateway
     }
   }
 
-  // 🔹 O‘qituvchi yoki tizim tomonidan quiz boshlanishi
+  // O‘qituvchi yoki tizim tomonidan quiz boshlanishi
   @SubscribeMessage(SOCKET.START_QUIZ)
   async startQuiz(@ConnectedSocket() client: Socket) {
     try {
@@ -115,7 +117,7 @@ export class GatewayGateway
       const { student, answer } = studentAnswerData;
 
       this.server
-        .to(student.quiz.roomCode)
+        .to(student.socketId)
         .emit(SOCKET.ANSWER_IS_CORRECT, { isCorrect: answer.isCorrect });
     } catch (error) {
       console.log('Socker error: ', error);
@@ -123,5 +125,20 @@ export class GatewayGateway
         message: error.message ? error.message : error,
       });
     }
+  }
+
+  // Quizni yakunlash
+  @SubscribeMessage(SOCKET.END_QUIZ)
+  async endQuiz(
+    @MessageBody() endQuizDto: EndQuizDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const endQuizData = await this.gatewayService.endQuiz(endQuizDto, client);
+
+    if (!endQuizData) return;
+
+    const { student, result } = endQuizData;
+
+    this.server.to(student.socketId).emit(SOCKET.RESULT, { result });
   }
 }

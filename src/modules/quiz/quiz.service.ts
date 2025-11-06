@@ -5,10 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateQuizDto } from './dto/create-quiz.dto';
-import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { generateCode } from '@common/utils/generate-code.lib';
-import { identity } from 'rxjs';
 import { RoomCodeDto } from './dto/room-code.dto';
 
 @Injectable()
@@ -30,6 +28,37 @@ export class QuizService {
 
     const roomCode = generateCode();
     return this.prisma.quizzes.create({ data: { ...createQuizDto, roomCode } });
+  }
+
+  async startQuiz(quizId: number) {
+    const start = new Date();
+
+    const quiz = await this.prisma.quizzes.findUnique({
+      where: { id: quizId },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException("Bunday ID'li quiz mavjud emas");
+    }
+
+    const end = new Date(start.getTime() + quiz.duration * 1000);
+
+    return this.prisma.quizzes.update({
+      where: { id: quizId },
+      data: {
+        isActive: true,
+        startTime: start,
+        endTime: end,
+      },
+      include: {
+        teacher: true,
+        questions: {
+          include: {
+            answers: true,
+          },
+        },
+      },
+    });
   }
 
   findAll(userId: number) {

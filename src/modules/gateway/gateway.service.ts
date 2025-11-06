@@ -1,14 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { Socket } from 'socket.io';
-import { Students, Quizzes, Answers } from '@prisma/client';
+import { Students, Quizzes, Answers, Results } from '@prisma/client';
 import { SOCKET } from '@common/enums';
 import { StudentAnswerDto } from './dto/student-answer.dto';
+import { QuizService } from '@modules/quiz/quiz.service';
+import { EndQuizDto } from './dto/end-quiz.dto';
+import { ResultService } from '@modules/result/result.service';
+import { BotService } from '@modules/bot/bot.service';
 
 @Injectable()
 export class GatewayService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly quizService: QuizService,
+    private readonly resultService: ResultService,
+    private readonly botService: BotService,
+  ) {}
 
   async joinRoom(
     joinRoomDto: JoinRoomDto,
@@ -42,33 +51,53 @@ export class GatewayService {
   }
 
   async startQuiz(client: Socket): Promise<Quizzes | undefined> {
-    const socketId = client.id;
+    try {
+      const socketId = client.id;
 
-    const foundStudent = await this.prisma.students.findFirst({
-      where: { socketId },
-      include: { quiz: true },
-    });
-
-    const quizze = await this.prisma.quizzes.findFirst({
-      where: { id: foundStudent?.quiz.id },
-      include: {
-        teacher: true,
-        questions: {
-          include: {
-            answers: true,
-          },
-        },
-      },
-    });
-
-    if (!quizze) {
-      client.emit(SOCKET.ERROR, {
-        message: "O'quvchiga biriktirilgan vikorina (quiz) mavjud emas",
+      const foundStudent = await this.prisma.students.findFirst({
+        where: { socketId },
+        include: { quiz: true },
       });
-      return;
-    }
 
-    return quizze;
+      if (!foundStudent) {
+        client.emit(SOCKET.ERROR, {
+          message: `socket_id=${socketId} bunday socket ID'li foydalanuvchi topilmadi`,
+        });
+        return;
+      }
+
+      const quizze = await this.quizService.startQuiz(foundStudent.quizId);
+      // const quizze = await this.prisma.quizzes.findFirst({
+      //   where: { id: foundStudent?.quiz.id },
+      //   include: {
+      //     teacher: true,
+      //     questions: {
+      //       include: {
+      //         answers: true,
+      //       },
+      //     },
+      //   },
+      // });
+
+      // if (!quizze) {
+      //   client.emit(SOCKET.ERROR, {
+      //     message: "O'quvchiga biriktirilgan vikorina (quiz) mavjud emas",
+      //   });
+      //   return;
+      // }
+
+      return quizze;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        client.emit(SOCKET.ERROR, {
+          message: "O'quvchiga biriktirilgan vikorina (quiz) mavjud emas",
+        });
+      } else {
+        client.emit(SOCKET.ERROR, {
+          message: `${error}`,
+        });
+      }
+    }
   }
 
   async studentAnswer(
@@ -111,5 +140,46 @@ export class GatewayService {
     });
 
     return { student: foundStudent, answer };
+  }
+
+  async endQuiz(
+    endQuizDto: EndQuizDto,
+    client: Socket,
+  ): Promise<{ result: Results; student: Students } | undefined> {
+    const result = await this.resultService.create(endQuizDto);
+    const student = await this.prisma.students.findUnique({
+      where: { id: endQuizDto.studentId },
+    });
+
+    if (!student) {
+      client.emit(SOCKET.ERROR, {
+        message: `Student topilmadi`,
+      });
+      return;
+    }
+
+    const message = this.botService.resultMessage(student, result);
+
+    const foundTeacher = await this.prisma.teachers.findUnique({
+      where: { id: endQuizDto.teacherId },
+    });
+
+    if (!student) {
+      client.emit(SOCKET.ERROR, {
+        message: `Teacher topilmadi`,
+      });
+      return;
+    }
+
+    if (!foundTeacher?.telegramId) {
+      client.emit(SOCKET.ERROR, {
+        message: `${foundTeacher?.name} iltioms natijalarni sizga yubora olishimiz uchun bot'ga start bosing`,
+      });
+      return;
+    }
+
+    await this.botService.sendMessage(foundTeacher.telegramId, message);
+
+    return { result, student };
   }
 }
