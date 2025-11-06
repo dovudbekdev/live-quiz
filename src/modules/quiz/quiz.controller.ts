@@ -21,6 +21,7 @@ import { Quizzes } from '@prisma/client';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@common/guards';
 import { PrismaService } from '@modules/prisma/prisma.service';
+import { RoomCodeDto } from './dto/room-code.dto';
 
 @Controller('quiz')
 export class QuizController {
@@ -83,9 +84,9 @@ export class QuizController {
     });
   }
 
-  @Get('room/:roomCode')
-  async findOneQuizByRoomCode(@Param('roomCode') roomCode: string) {
-    const quiz = await this.quizService.findOneQuizByRoomCode(roomCode);
+  @Post('room-code')
+  async findOneQuizByRoomCode(@Body() roomCodeDto: RoomCodeDto) {
+    const quiz = await this.quizService.findOneQuizByRoomCode(roomCodeDto);
     return new ResponseData<Quizzes>({
       success: true,
       message: "Quiz ma'lumotlari",

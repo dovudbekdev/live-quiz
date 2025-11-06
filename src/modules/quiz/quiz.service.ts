@@ -9,6 +9,7 @@ import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { generateCode } from '@common/utils/generate-code.lib';
 import { identity } from 'rxjs';
+import { RoomCodeDto } from './dto/room-code.dto';
 
 @Injectable()
 export class QuizService {
@@ -56,9 +57,9 @@ export class QuizService {
     return quiz;
   }
 
-  async findOneQuizByRoomCode(roomCode: string) {
+  async findOneQuizByRoomCode(roomCodeDto: RoomCodeDto) {
     const existingQuiz = await this.prisma.quizzes.findUnique({
-      where: { roomCode },
+      where: { roomCode: roomCodeDto.roomCode },
     });
 
     if (!existingQuiz || !existingQuiz.isActive) {
