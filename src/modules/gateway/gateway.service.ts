@@ -52,6 +52,7 @@ export class GatewayService {
     const quizze = await this.prisma.quizzes.findFirst({
       where: { id: foundStudent?.quiz.id },
       include: {
+        teacher: true,
         questions: {
           include: {
             answers: true,

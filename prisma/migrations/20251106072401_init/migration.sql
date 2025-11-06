@@ -9,6 +9,8 @@ CREATE TABLE "teachers" (
     "surname" VARCHAR(36),
     "phone_number" TEXT NOT NULL,
     "password" TEXT NOT NULL,
+    "password_reset_token" TEXT,
+    "password_reset_expires" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
