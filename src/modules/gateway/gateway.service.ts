@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { Socket } from 'socket.io';
-import { Students, Quizzes, Answers, Results } from '@prisma/client';
+import { Students, Quizzes, Answers, Results, Teachers } from '@prisma/client';
 import { SOCKET } from '@common/enums';
 import { StudentAnswerDto } from './dto/student-answer.dto';
 import { QuizService } from '@modules/quiz/quiz.service';
@@ -145,15 +145,31 @@ export class GatewayService {
   async endQuiz(
     endQuizDto: EndQuizDto,
     client: Socket,
-  ): Promise<{ result: Results; student: Students } | undefined> {
+  ): Promise<
+    | {
+        studentResult: Results;
+        student: Students & { quiz: Quizzes };
+        bestResult: Results;
+        teacher: Teachers;
+      }
+    | undefined
+  > {
     const result = await this.resultService.create(endQuizDto);
     const student = await this.prisma.students.findUnique({
       where: { id: endQuizDto.studentId },
+      include: { quiz: true },
     });
 
     if (!student) {
       client.emit(SOCKET.ERROR, {
         message: `Student topilmadi`,
+      });
+      return;
+    }
+
+    if (!student.quiz) {
+      client.emit(SOCKET.ERROR, {
+        message: `Studentning quizi topilmadi`,
       });
       return;
     }
@@ -164,7 +180,7 @@ export class GatewayService {
       where: { id: endQuizDto.teacherId },
     });
 
-    if (!student) {
+    if (!foundTeacher) {
       client.emit(SOCKET.ERROR, {
         message: `Teacher topilmadi`,
       });
@@ -178,8 +194,30 @@ export class GatewayService {
       return;
     }
 
+    const bestResult = await this.prisma.results.findFirst({
+      orderBy: [
+        { score: 'desc' }, // 1️⃣ Eng katta ball bo‘yicha
+        { finishedAt: 'asc' }, // 2️⃣ Agar ball teng bo‘lsa, eng erta tugatgan
+      ],
+      include: {
+        student: true, // 3️⃣ Student ma’lumotlarini ham qo‘shamiz
+      },
+    });
+
+    if (!bestResult) {
+      client.emit(SOCKET.ERROR, {
+        message: `Eng yuqori natija to'plagan o'quvchi mavjud emas`,
+      });
+      return;
+    }
+
     await this.botService.sendMessage(foundTeacher.telegramId, message);
 
-    return { result, student };
+    return {
+      studentResult: result,
+      student,
+      bestResult: bestResult,
+      teacher: foundTeacher,
+    };
   }
 }

@@ -137,8 +137,10 @@ export class GatewayGateway
 
     if (!endQuizData) return;
 
-    const { student, result } = endQuizData;
+    const { studentResult, student, bestResult, teacher } = endQuizData;
 
-    this.server.to(student.socketId).emit(SOCKET.RESULT, { result });
+    this.server
+      .to(student.quiz.roomCode)
+      .emit(SOCKET.RESULT, { studentResult, bestResult });
   }
 }
