@@ -8,4 +8,8 @@ export class JoinRoomDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  type: string;
 }

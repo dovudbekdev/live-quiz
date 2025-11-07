@@ -50,10 +50,16 @@ export class GatewayGateway
   // 🟩 STUDENT RECONNECT BO‘LGANDA (refreshdan keyin)
   @SubscribeMessage(SOCKET.RECONNECT_STUDENT)
   async reconnectStudent(
-    @MessageBody() data: { studentId: number },
+    @MessageBody() data: { studentId: number; roomCode: string | undefined },
     @ConnectedSocket() client: Socket,
   ) {
     try {
+      if (data.roomCode) {
+        // studentni xonasiga qaytaramiz
+        client.join(data.roomCode);
+        return;
+      }
+
       const student = await this.prisma.students.findUnique({
         where: { id: data.studentId },
         include: { quiz: true },

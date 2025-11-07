@@ -23,7 +23,8 @@ export class GatewayService {
     joinRoomDto: JoinRoomDto,
     client: Socket,
   ): Promise<
-    { student: Students; students: Students[]; teacher: Teachers } | undefined
+    | { student: Students | null; students: Students[]; teacher: Teachers }
+    | undefined
   > {
     const quiz = await this.prisma.quizzes.findUnique({
       where: { roomCode: joinRoomDto.roomCode },
@@ -34,18 +35,22 @@ export class GatewayService {
       return;
     }
 
-    const student = await this.prisma.students.create({
-      data: {
-        quizId: quiz.id,
-        name: joinRoomDto.name,
-        socketId: client.id,
-      },
-    });
+    let student: null | Students = null;
+    if (joinRoomDto.type !== 'teacher') {
+      student = await this.prisma.students.create({
+        data: {
+          quizId: quiz.id,
+          name: joinRoomDto.name,
+          socketId: client.id,
+        },
+      });
+    }
 
     // Xonadagi barcha studentlar ro'yxatini olish
     const students = await this.prisma.students.findMany({
       where: {
         quizId: quiz.id,
+        isActive: true,
       },
     });
 
