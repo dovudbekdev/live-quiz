@@ -41,7 +41,7 @@ export class GatewayGateway
     console.log('Client disconnected:', client.id);
 
     // eski socket_id orqali studentni topamiz
-    const foundStudent = await this.prisma.students.findUnique({
+    const foundStudent = await this.prisma.students.findFirst({
       where: { socketId: client.id },
     });
 

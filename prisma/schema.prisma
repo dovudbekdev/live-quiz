@@ -40,7 +40,7 @@ model Students {
   id       Int      @id @default(autoincrement())
   quizId   Int      @map("quiz_id")
   name     String   @db.VarChar(36)
-  socketId String   @unique @map("socket_id")
+  socketId String   @map("socket_id")
   joinedAt DateTime @default(now()) @map("joined_at")
   isActive Boolean? @default(true)
 
