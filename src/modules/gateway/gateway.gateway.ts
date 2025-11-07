@@ -41,6 +41,12 @@ export class GatewayGateway
     console.log('Client disconnected:', client.id);
 
     // eski socket_id orqali studentni topamiz
+    const foundStudent = await this.prisma.students.findUnique({
+      where: { socketId: client.id },
+    });
+
+    if (!foundStudent) return;
+
     await this.prisma.students.updateMany({
       where: { socketId: client.id },
       data: { isActive: false },
@@ -50,13 +56,30 @@ export class GatewayGateway
   // 🟩 STUDENT RECONNECT BO‘LGANDA (refreshdan keyin)
   @SubscribeMessage(SOCKET.RECONNECT_STUDENT)
   async reconnectStudent(
-    @MessageBody() data: { studentId: number; roomCode: string | undefined },
+    @MessageBody()
+    data: {
+      studentId: number;
+      roomCode: string | undefined;
+      quizId: number | undefined;
+    },
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      if (data.roomCode) {
+      if (data.roomCode && data.quizId) {
         // studentni xonasiga qaytaramiz
+        const students = await this.prisma.students.findMany({
+          where: { quizId: data.quizId, isActive: true },
+        });
         client.join(data.roomCode);
+
+        this.server
+          .to(data.roomCode)
+          .emit(SOCKET.STUDENT_LIST_UPDATE, { students });
+
+        client.emit(SOCKET.RECONNECTED, {
+          message: 'Siz qayta ulanishingiz muvaffaqiyatli amalga oshirildi!',
+          student: 'Teacher',
+        });
         return;
       }
 
@@ -89,7 +112,7 @@ export class GatewayGateway
 
       // o‘sha xonadagi teacher va boshqa studentlarga xabar berish
       const students = await this.prisma.students.findMany({
-        where: { quizId: student.quizId },
+        where: { quizId: student.quizId, isActive: true },
       });
 
       this.server
