@@ -134,6 +134,7 @@ export class GatewayGateway
     @MessageBody() endQuizDto: EndQuizDto,
     @ConnectedSocket() client: Socket,
   ) {
+    console.log({ clientId: client.id, endQuizDto });
     const endQuizData = await this.gatewayService.endQuiz(endQuizDto, client);
 
     if (!endQuizData) return;
