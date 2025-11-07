@@ -1,4 +1,6 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -47,6 +49,15 @@ export class ResultService {
 
     if (!quiz) {
       throw new NotFoundException("Bunday ID'li quiz mavjud emas");
+    }
+
+    const foundResult = await this.prisma.results.findUnique({
+      where: { studentId: student.id },
+    });
+    if (foundResult) {
+      throw new ConflictException(
+        `Bunday studentID (${student.id}) li result allaqachon mavjud`,
+      );
     }
 
     //  Natijani Results jadvaliga saqlash

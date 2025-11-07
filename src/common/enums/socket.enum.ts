@@ -9,5 +9,7 @@ export enum SOCKET {
   ANSWER = 'answer',
   ANSWER_IS_CORRECT = 'answerIsCorrect',
   RESULT = 'result',
+  RECONNECT_STUDENT = 'reconnectStudent',
+  RECONNECTED = 'reconnected',
   ERROR = 'error',
 }

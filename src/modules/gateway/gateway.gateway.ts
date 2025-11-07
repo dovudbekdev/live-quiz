@@ -31,22 +31,76 @@ export class GatewayGateway
     private readonly prisma: PrismaService,
   ) {}
 
+  // ✅ SOCKET ULANGANDA
   async handleConnection(client: Socket) {
-    console.log('Client connected: ', client.id);
+    console.log('Client connected:', client.id);
   }
 
+  // ✅ SOCKET UZILGANDA
   async handleDisconnect(client: Socket) {
-    console.log('Client disconnected: ', client.id);
-    const socketId = client.id; // ✅ to‘g‘risi shu
+    console.log('Client disconnected:', client.id);
 
-    await this.prisma.students.update({
-      where: { socketId }, // ✅ bu yerda ham to‘g‘ri
-      data: { socketId },
+    // eski socket_id orqali studentni topamiz
+    await this.prisma.students.updateMany({
+      where: { socketId: client.id },
+      data: { isActive: false },
     });
-    // socket_id bo‘yicha studentni topib o‘chirish yoki holatini yangilash mumkin
   }
 
-  // O'quvchilarni xonalarga qo'shish
+  // 🟩 STUDENT RECONNECT BO‘LGANDA (refreshdan keyin)
+  @SubscribeMessage(SOCKET.RECONNECT_STUDENT)
+  async reconnectStudent(
+    @MessageBody() data: { studentId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const student = await this.prisma.students.findUnique({
+        where: { id: data.studentId },
+        include: { quiz: true },
+      });
+
+      if (!student) {
+        return client.emit(SOCKET.ERROR, {
+          message: 'Student topilmadi, qayta tizimga kiring.',
+        });
+      }
+
+      // socket_id va isActive holatini yangilaymiz
+      await this.prisma.students.update({
+        where: { id: student.id },
+        data: {
+          socketId: client.id,
+          isActive: true,
+        },
+      });
+
+      // studentni xonasiga qaytaramiz
+      client.join(student.quiz.roomCode);
+
+      console.log(
+        `Student (${student.name}) reconnected with socket ${client.id}`,
+      );
+
+      // o‘sha xonadagi teacher va boshqa studentlarga xabar berish
+      const students = await this.prisma.students.findMany({
+        where: { quizId: student.quizId },
+      });
+
+      this.server
+        .to(student.quiz.roomCode)
+        .emit(SOCKET.STUDENT_LIST_UPDATE, { students });
+
+      client.emit(SOCKET.RECONNECTED, {
+        message: 'Siz qayta ulanishingiz muvaffaqiyatli amalga oshirildi!',
+        student,
+      });
+    } catch (error) {
+      console.log('Reconnect error:', error);
+      client.emit(SOCKET.ERROR, { message: error.message });
+    }
+  }
+
+  // 🧩 O'quvchilarni xonalarga qo‘shish
   @SubscribeMessage(SOCKET.JOIN_ROOM)
   async joinRoom(
     @MessageBody() joinRoomDto: JoinRoomDto,
@@ -62,16 +116,18 @@ export class GatewayGateway
       if (!studentData) {
         return;
       }
+
       const { student, students, teacher } = studentData;
 
-      // Client'ni xonaga qo'shamiz
+      // Client'ni xonaga qo‘shamiz
       client.join(joinRoomDto.roomCode);
 
-      // Barcha foydalanuvchilarga yangilangan ro'yxatni yuboramiz
+      // Barcha foydalanuvchilarga yangilangan ro‘yxatni yuboramiz
       this.server
         .to(joinRoomDto.roomCode)
         .emit(SOCKET.STUDENT_LIST_UPDATE, { students, teacher });
 
+      // 🟩 Student ID ni clientga yuboramiz (localStorage uchun)
       client.emit(SOCKET.JOINED_ROOM, {
         message: 'Xonaga muvaffaqiyatli qo‘shildingiz',
         student,

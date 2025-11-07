@@ -165,70 +165,76 @@ export class GatewayService {
       }
     | undefined
   > {
-    const result = await this.resultService.create(endQuizDto);
-    const student = await this.prisma.students.findUnique({
-      where: { id: endQuizDto.studentId },
-      include: { quiz: true },
-    });
-
-    if (!student) {
-      client.emit(SOCKET.ERROR, {
-        message: `Student topilmadi`,
+    try {
+      const result = await this.resultService.create(endQuizDto);
+      const student = await this.prisma.students.findUnique({
+        where: { id: endQuizDto.studentId },
+        include: { quiz: true },
       });
-      return;
-    }
 
-    if (!student.quiz) {
-      client.emit(SOCKET.ERROR, {
-        message: `Studentning quizi topilmadi`,
+      if (!student) {
+        client.emit(SOCKET.ERROR, {
+          message: `Student topilmadi`,
+        });
+        return;
+      }
+
+      if (!student.quiz) {
+        client.emit(SOCKET.ERROR, {
+          message: `Studentning quizi topilmadi`,
+        });
+        return;
+      }
+
+      const message = this.botService.resultMessage(student, result);
+
+      const foundTeacher = await this.prisma.teachers.findUnique({
+        where: { id: endQuizDto.teacherId },
       });
-      return;
-    }
 
-    const message = this.botService.resultMessage(student, result);
+      if (!foundTeacher) {
+        client.emit(SOCKET.ERROR, {
+          message: `Teacher topilmadi`,
+        });
+        return;
+      }
 
-    const foundTeacher = await this.prisma.teachers.findUnique({
-      where: { id: endQuizDto.teacherId },
-    });
+      if (!foundTeacher?.telegramId) {
+        client.emit(SOCKET.ERROR, {
+          message: `${foundTeacher?.name} iltioms natijalarni sizga yubora olishimiz uchun bot'ga start bosing`,
+        });
+        return;
+      }
 
-    if (!foundTeacher) {
-      client.emit(SOCKET.ERROR, {
-        message: `Teacher topilmadi`,
+      const bestResult = await this.prisma.results.findFirst({
+        orderBy: [
+          { score: 'desc' }, // 1️⃣ Eng katta ball bo‘yicha
+          { finishedAt: 'asc' }, // 2️⃣ Agar ball teng bo‘lsa, eng erta tugatgan
+        ],
+        include: {
+          student: true, // 3️⃣ Student ma’lumotlarini ham qo‘shamiz
+        },
       });
-      return;
-    }
 
-    if (!foundTeacher?.telegramId) {
+      if (!bestResult) {
+        client.emit(SOCKET.ERROR, {
+          message: `Eng yuqori natija to'plagan o'quvchi mavjud emas`,
+        });
+        return;
+      }
+
+      await this.botService.sendMessage(foundTeacher.telegramId, message);
+
+      return {
+        studentResult: result,
+        student,
+        bestResult: bestResult,
+        teacher: foundTeacher,
+      };
+    } catch (error) {
       client.emit(SOCKET.ERROR, {
-        message: `${foundTeacher?.name} iltioms natijalarni sizga yubora olishimiz uchun bot'ga start bosing`,
+        message: error,
       });
-      return;
     }
-
-    const bestResult = await this.prisma.results.findFirst({
-      orderBy: [
-        { score: 'desc' }, // 1️⃣ Eng katta ball bo‘yicha
-        { finishedAt: 'asc' }, // 2️⃣ Agar ball teng bo‘lsa, eng erta tugatgan
-      ],
-      include: {
-        student: true, // 3️⃣ Student ma’lumotlarini ham qo‘shamiz
-      },
-    });
-
-    if (!bestResult) {
-      client.emit(SOCKET.ERROR, {
-        message: `Eng yuqori natija to'plagan o'quvchi mavjud emas`,
-      });
-      return;
-    }
-
-    await this.botService.sendMessage(foundTeacher.telegramId, message);
-
-    return {
-      studentResult: result,
-      student,
-      bestResult: bestResult,
-      teacher: foundTeacher,
-    };
   }
 }

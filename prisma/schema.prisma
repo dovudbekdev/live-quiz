@@ -42,6 +42,7 @@ model Students {
   name     String   @db.VarChar(36)
   socketId String   @unique @map("socket_id")
   joinedAt DateTime @default(now()) @map("joined_at")
+  isActive Boolean? @default(true)
 
   quiz           Quizzes          @relation(fields: [quizId], references: [id])
   results        Results?
