@@ -7,6 +7,7 @@ import {
 import { CreateResultDto } from './dto/create-result.dto';
 import { UpdateResultDto } from './dto/update-result.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ResultService {
@@ -66,8 +67,8 @@ export class ResultService {
         studentId: student.id,
         totalCorrect: totalCorrect,
         totalQuestion: totalQuestions,
-        score: Number(score),
-        startedAt: quiz.startTime!,
+        score: new Prisma.Decimal(score),
+        startedAt: quiz.startTime || new Date(),
         finishedAt: new Date(),
       },
     });
