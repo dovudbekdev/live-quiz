@@ -22,7 +22,9 @@ export class GatewayService {
   async joinRoom(
     joinRoomDto: JoinRoomDto,
     client: Socket,
-  ): Promise<{ student: Students; students: Students[] } | undefined> {
+  ): Promise<
+    { student: Students; students: Students[]; teacher: Teachers } | undefined
+  > {
     const quiz = await this.prisma.quizzes.findUnique({
       where: { roomCode: joinRoomDto.roomCode },
     });
@@ -47,7 +49,16 @@ export class GatewayService {
       },
     });
 
-    return { student, students };
+    const teacher = await this.prisma.teachers.findUnique({
+      where: { id: quiz.teacherId },
+    });
+
+    if (!teacher) {
+      client.emit(SOCKET.ERROR, { message: 'Teacher topilmadi' });
+      return;
+    }
+
+    return { student, students, teacher };
   }
 
   async startQuiz(client: Socket): Promise<Quizzes | undefined> {

@@ -39,8 +39,9 @@ export class GatewayGateway
     console.log('Client disconnected: ', client.id);
     const socketId = client.id; // ✅ to‘g‘risi shu
 
-    await this.prisma.students.delete({
+    await this.prisma.students.update({
       where: { socketId }, // ✅ bu yerda ham to‘g‘ri
+      data: { socketId },
     });
     // socket_id bo‘yicha studentni topib o‘chirish yoki holatini yangilash mumkin
   }
@@ -61,7 +62,7 @@ export class GatewayGateway
       if (!studentData) {
         return;
       }
-      const { student, students } = studentData;
+      const { student, students, teacher } = studentData;
 
       // Client'ni xonaga qo'shamiz
       client.join(joinRoomDto.roomCode);
@@ -69,7 +70,7 @@ export class GatewayGateway
       // Barcha foydalanuvchilarga yangilangan ro'yxatni yuboramiz
       this.server
         .to(joinRoomDto.roomCode)
-        .emit(SOCKET.STUDENT_LIST_UPDATE, { students });
+        .emit(SOCKET.STUDENT_LIST_UPDATE, { students, teacher });
 
       client.emit(SOCKET.JOINED_ROOM, {
         message: 'Xonaga muvaffaqiyatli qo‘shildingiz',
