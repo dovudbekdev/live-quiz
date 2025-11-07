@@ -16,7 +16,10 @@ async function bootstrap() {
 
   const URL = `http://${APP_HOST}:${PORT}/${API_PREFIX}`;
   // Cors
-  app.enableCors({ origin: '*' });
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  });
 
   // Set api prefix
   app.setGlobalPrefix(API_PREFIX);
