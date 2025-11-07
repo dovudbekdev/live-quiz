@@ -142,7 +142,9 @@ export class GatewayGateway
         joinRoomDto,
         client,
       );
+
       if (!studentData) {
+        client.emit(SOCKET.ERROR, { message: 'studentData mavjud emas' });
         return;
       }
 
