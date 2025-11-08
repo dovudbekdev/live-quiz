@@ -290,6 +290,8 @@ export class GatewayGateway
         },
       });
 
+      console.log({ bestResult });
+
       if (!bestResult) {
         client.emit(SOCKET.ERROR, {
           message: `Eng yuqori natija topilmadi`,
