@@ -92,7 +92,7 @@ export class BotUpdate {
       }
 
       await this.userService.updateTeacher(foundTeacher.id, {
-        telegramId: ctx.from?.id,
+        telegramId: String(ctx.from?.id),
       });
 
       return await ctx.reply(
@@ -122,7 +122,7 @@ export class BotUpdate {
         name: ctx.from?.first_name,
         phoneNumber: `+${ctx.session.phoneNumber}`,
         password: msg.text,
-        telegramId: ctx.from?.id,
+        telegramId: String(ctx.from?.id),
       });
 
       console.log('Bot result =>', result);

@@ -3,10 +3,12 @@ import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class RegisterDto {
   @ApiPropertyOptional({
-    type: 'integer',
+    type: 'string',
     description: "Foydalanuvchinig telegram ID'si",
   })
-  telegramId?: number;
+  @IsString()
+  @IsOptional()
+  telegramId?: string;
 
   @ApiPropertyOptional({
     example: 'ali',

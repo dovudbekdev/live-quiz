@@ -7,7 +7,7 @@ import axios from 'axios';
 export class BotService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async sendMessage(telegramId: number, message: string) {
+  async sendMessage(telegramId: string, message: string) {
     const existingTeacher = await this.prisma.teachers.findFirst({
       where: { telegramId },
     });
