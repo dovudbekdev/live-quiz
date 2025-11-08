@@ -1,9 +1,6 @@
-import { IsInt } from 'class-validator';
+export type EndQuizDto = {
+  studentId?: number;
+  teacherId?: number;
+};
 
-export class EndQuizDto {
-  @IsInt()
-  studentId: number;
-
-  @IsInt()
-  teacherId: number;
-}
+export type StrictEndQuizDto = Required<EndQuizDto>;

@@ -6,7 +6,7 @@ import { Students, Quizzes, Answers, Results, Teachers } from '@prisma/client';
 import { SOCKET } from '@common/enums';
 import { StudentAnswerDto } from './dto/student-answer.dto';
 import { QuizService } from '@modules/quiz/quiz.service';
-import { EndQuizDto } from './dto/end-quiz.dto';
+import { EndQuizDto, StrictEndQuizDto } from './dto/end-quiz.dto';
 import { ResultService } from '@modules/result/result.service';
 import { BotService } from '@modules/bot/bot.service';
 
@@ -23,7 +23,12 @@ export class GatewayService {
     joinRoomDto: JoinRoomDto,
     client: Socket,
   ): Promise<
-    | { student: Students | null; students: Students[]; teacher: Teachers }
+    | {
+        student: Students | null;
+        students: Students[];
+        teacher: Teachers;
+        quiz: Quizzes;
+      }
     | undefined
   > {
     const quiz = await this.prisma.quizzes.findUnique({
@@ -63,7 +68,7 @@ export class GatewayService {
       return;
     }
 
-    return { student, students, teacher };
+    return { student, students, teacher, quiz };
   }
 
   async startQuiz(client: Socket): Promise<Quizzes | undefined> {
@@ -159,14 +164,13 @@ export class GatewayService {
   }
 
   async endQuiz(
-    endQuizDto: EndQuizDto,
+    endQuizDto: { studentId: number },
     client: Socket,
   ): Promise<
     | {
         studentResult: Results;
         student: Students & { quiz: Quizzes };
         bestResult: Results;
-        teacher: Teachers;
       }
     | undefined
   > {
@@ -191,25 +195,25 @@ export class GatewayService {
         return;
       }
 
-      const message = this.botService.resultMessage(student, result);
+      // const message = this.botService.resultMessage(student, result);
 
-      const foundTeacher = await this.prisma.teachers.findUnique({
-        where: { id: endQuizDto.teacherId },
-      });
+      // const foundTeacher = await this.prisma.teachers.findUnique({
+      //   where: { id: endQuizDto.teacherId },
+      // });
 
-      if (!foundTeacher) {
-        client.emit(SOCKET.ERROR, {
-          message: `Teacher topilmadi`,
-        });
-        return;
-      }
+      // if (!foundTeacher) {
+      //   client.emit(SOCKET.ERROR, {
+      //     message: `Teacher topilmadi`,
+      //   });
+      //   return;
+      // }
 
-      if (!foundTeacher?.telegramId) {
-        client.emit(SOCKET.ERROR, {
-          message: `${foundTeacher?.name} iltioms natijalarni sizga yubora olishimiz uchun bot'ga start bosing`,
-        });
-        return;
-      }
+      // if (!foundTeacher?.telegramId) {
+      //   client.emit(SOCKET.ERROR, {
+      //     message: `${foundTeacher?.name} iltioms natijalarni sizga yubora olishimiz uchun bot'ga start bosing`,
+      //   });
+      //   return;
+      // }
 
       const bestResult = await this.prisma.results.findFirst({
         orderBy: [
@@ -228,13 +232,12 @@ export class GatewayService {
         return;
       }
 
-      await this.botService.sendMessage(foundTeacher.telegramId, message);
+      // await this.botService.sendMessage(foundTeacher.telegramId, message);
 
       return {
         studentResult: result,
         student,
         bestResult: bestResult,
-        teacher: foundTeacher,
       };
     } catch (error) {
       client.emit(SOCKET.ERROR, {

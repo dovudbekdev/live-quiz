@@ -29,6 +29,7 @@ export class GatewayGateway
   constructor(
     private readonly gatewayService: GatewayService,
     private readonly prisma: PrismaService,
+    private readonly botService: BotService,
   ) {}
 
   // ✅ SOCKET ULANGANDA
@@ -222,11 +223,77 @@ export class GatewayGateway
     @ConnectedSocket() client: Socket,
   ) {
     console.log({ clientId: client.id, endQuizDto });
-    const endQuizData = await this.gatewayService.endQuiz(endQuizDto, client);
+
+    if (endQuizDto.teacherId) {
+      const bestResult = await this.prisma.results.findFirst({
+        orderBy: [
+          { score: 'desc' }, // 1️⃣ Eng katta ball bo‘yicha
+          { finishedAt: 'asc' }, // 2️⃣ Agar ball teng bo‘lsa, eng erta tugatgan
+        ],
+        include: {
+          student: true, // 3️⃣ Student ma’lumotlarini ham qo‘shamiz
+        },
+      });
+
+      if (!bestResult) {
+        client.emit(SOCKET.ERROR, {
+          message: `Eng yuqori natija topilmadi`,
+        });
+        return;
+      }
+
+      const student = await this.prisma.students.findUnique({
+        where: { id: bestResult.studentId },
+        include: { quiz: true },
+      });
+
+      if (!student) {
+        client.emit(SOCKET.ERROR, {
+          message: `Student topilmadi`,
+        });
+        return;
+      }
+      const message = this.botService.resultMessage(student, bestResult);
+
+      const foundTeacher = await this.prisma.teachers.findUnique({
+        where: { id: endQuizDto.teacherId },
+      });
+
+      if (!foundTeacher) {
+        client.emit(SOCKET.ERROR, {
+          message: `Teacher topilmadi`,
+        });
+        return;
+      }
+
+      if (!foundTeacher?.telegramId) {
+        client.emit(SOCKET.ERROR, {
+          message: `${foundTeacher?.name} iltioms natijalarni sizga yubora olishimiz uchun bot'ga start bosing`,
+        });
+        return;
+      }
+
+      if (!bestResult) {
+        client.emit(SOCKET.ERROR, {
+          message: `Eng yuqori natija to'plagan o'quvchi mavjud emas`,
+        });
+        return;
+      }
+
+      await this.botService.sendMessage(foundTeacher.telegramId, message);
+
+      this.server.to(student.quiz.roomCode).emit(SOCKET.RESULT, { bestResult });
+      return;
+    }
+
+    const endQuizData = await this.gatewayService.endQuiz(
+      { studentId: endQuizDto.studentId! },
+      client,
+    );
 
     if (!endQuizData) return;
 
-    const { studentResult, student, bestResult, teacher } = endQuizData;
+    const { studentResult, student, bestResult } = endQuizData;
 
     this.server
       .to(student.quiz.roomCode)
