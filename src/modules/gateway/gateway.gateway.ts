@@ -131,7 +131,6 @@ export class GatewayGateway
     }
   }
 
-  // 🧩 O'quvchilarni xonalarga qo‘shish
   @SubscribeMessage(SOCKET.JOIN_ROOM)
   async joinRoom(
     @MessageBody() joinRoomDto: JoinRoomDto,
@@ -144,36 +143,88 @@ export class GatewayGateway
         joinRoomDto,
         client,
       );
-
       console.log({ studentData });
 
-      if (!studentData) {
-        client.emit(SOCKET.ERROR, { message: 'studentData mavjud emas' });
+      // ✅ Har doim xonaga qo‘shish
+      client.join(joinRoomDto.roomCode);
+      console.log(
+        `✅ ${joinRoomDto.type} joined room: ${joinRoomDto.roomCode}`,
+      );
+
+      // Teacher bo‘lsa, shunchaki tasdiqlovchi xabar yuborish kifoya
+      if (joinRoomDto.type === 'teacher') {
+        client.emit(SOCKET.JOINED_ROOM, {
+          message: 'Teacher roomga qo‘shildi',
+        });
         return;
       }
 
-      const { student, students, teacher } = studentData;
+      // Student bo‘lsa, student listni yangilaymiz
+      if (studentData) {
+        const { students, teacher } = studentData;
+        this.server
+          .to(joinRoomDto.roomCode)
+          .emit(SOCKET.STUDENT_LIST_UPDATE, { students, teacher });
 
-      // Client'ni xonaga qo‘shamiz
-      client.join(joinRoomDto.roomCode);
-
-      // Barcha foydalanuvchilarga yangilangan ro‘yxatni yuboramiz
-      this.server
-        .to(joinRoomDto.roomCode)
-        .emit(SOCKET.STUDENT_LIST_UPDATE, { students, teacher });
-
-      // 🟩 Student ID ni clientga yuboramiz (localStorage uchun)
-      client.emit(SOCKET.JOINED_ROOM, {
-        message: 'Xonaga muvaffaqiyatli qo‘shildingiz',
-        student,
-      });
+        client.emit(SOCKET.JOINED_ROOM, {
+          message: 'Xonaga muvaffaqiyatli qo‘shildingiz',
+        });
+      } else {
+        client.emit(SOCKET.ERROR, {
+          message: 'studentData mavjud emas',
+        });
+      }
     } catch (error) {
       console.log('socket error', error);
       client.emit(SOCKET.ERROR, {
-        message: error.message ? error.message : error,
+        message: error.message || error,
       });
     }
   }
+
+  // // 🧩 O'quvchilarni xonalarga qo‘shish
+  // @SubscribeMessage(SOCKET.JOIN_ROOM)
+  // async joinRoom(
+  //   @MessageBody() joinRoomDto: JoinRoomDto,
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   try {
+  //     console.log('Join room handle', { joinRoomDto });
+
+  //     const studentData = await this.gatewayService.joinRoom(
+  //       joinRoomDto,
+  //       client,
+  //     );
+
+  //     console.log({ studentData });
+
+  //     if (!studentData) {
+  //       client.emit(SOCKET.ERROR, { message: 'studentData mavjud emas' });
+  //       return;
+  //     }
+
+  //     const { student, students, teacher } = studentData;
+
+  //     // Client'ni xonaga qo‘shamiz
+  //     client.join(joinRoomDto.roomCode);
+
+  //     // Barcha foydalanuvchilarga yangilangan ro‘yxatni yuboramiz
+  //     this.server
+  //       .to(joinRoomDto.roomCode)
+  //       .emit(SOCKET.STUDENT_LIST_UPDATE, { students, teacher });
+
+  //     // 🟩 Student ID ni clientga yuboramiz (localStorage uchun)
+  //     client.emit(SOCKET.JOINED_ROOM, {
+  //       message: 'Xonaga muvaffaqiyatli qo‘shildingiz',
+  //       student,
+  //     });
+  //   } catch (error) {
+  //     console.log('socket error', error);
+  //     client.emit(SOCKET.ERROR, {
+  //       message: error.message ? error.message : error,
+  //     });
+  //   }
+  // }
 
   // O‘qituvchi yoki tizim tomonidan quiz boshlanishi
   @SubscribeMessage(SOCKET.START_QUIZ)
