@@ -66,6 +66,7 @@ export class GatewayGateway
     @ConnectedSocket() client: Socket,
   ) {
     try {
+      console.log('Reconnect handle');
       if (data.roomCode && data.quizId) {
         // studentni xonasiga qaytaramiz
         const students = await this.prisma.students.findMany({
@@ -137,7 +138,7 @@ export class GatewayGateway
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      console.log({ joinRoomDto });
+      console.log('Join room handle', { joinRoomDto });
 
       const studentData = await this.gatewayService.joinRoom(
         joinRoomDto,
@@ -175,6 +176,7 @@ export class GatewayGateway
   // O‘qituvchi yoki tizim tomonidan quiz boshlanishi
   @SubscribeMessage(SOCKET.START_QUIZ)
   async startQuiz(@ConnectedSocket() client: Socket) {
+    console.log('Start Quiz handle');
     try {
       const quiz = await this.gatewayService.startQuiz(client);
 
@@ -196,6 +198,7 @@ export class GatewayGateway
     @ConnectedSocket() client: Socket,
   ) {
     try {
+      console.log('Answer handle', { studentAnswerDto });
       const studentAnswerData = await this.gatewayService.studentAnswer(
         studentAnswerDto,
         client,
@@ -222,7 +225,7 @@ export class GatewayGateway
     @MessageBody() endQuizDto: EndQuizDto,
     @ConnectedSocket() client: Socket,
   ) {
-    console.log({ clientId: client.id, endQuizDto });
+    console.log('End quiz handle', { endQuizDto });
 
     if (endQuizDto.teacherId) {
       const bestResult = await this.prisma.results.findFirst({
