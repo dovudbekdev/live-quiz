@@ -76,6 +76,8 @@ export class BotUpdate {
         contact.phone_number,
       );
 
+    ctx.session.userData.phoneNumber = contact.phone_number;
+
     if (step === BOT_STEP.LOGIN) {
       if (!foundTeacherByPhoneNumber) {
         return await ctx.reply("Bu telefon raqam ro'yxatdan o'tmagan");
@@ -104,9 +106,11 @@ export class BotUpdate {
     const ask = ctx.session.aks;
 
     if (ask === BOT_STEP.ASK_PASSWORD) {
+      console.log('userData =>', ctx.session.userData);
+      console.log('password', msg.text);
       await this.authService.register({
         phoneNumber: ctx.session.userData.phoneNumber,
-        password: ctx.session.userData.password,
+        password: msg.text,
       });
 
       await ctx.reply("Tabriklayman siz muvaffaqiyatli ro'yxatdan o'tdingiz");
