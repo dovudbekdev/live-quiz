@@ -41,15 +41,15 @@ export class GatewayService {
     }
 
     let student: null | Students = null;
-    if (joinRoomDto.type !== 'teacher') {
-      student = await this.prisma.students.create({
-        data: {
-          quizId: quiz.id,
-          name: joinRoomDto.name,
-          socketId: client.id,
-        },
-      });
-    }
+    // if (joinRoomDto.type !== 'teacher') {
+    student = await this.prisma.students.create({
+      data: {
+        quizId: quiz.id,
+        name: joinRoomDto.name,
+        socketId: client.id,
+      },
+    });
+    // }
 
     // Xonadagi barcha studentlar ro'yxatini olish
     const students = await this.prisma.students.findMany({
@@ -74,12 +74,14 @@ export class GatewayService {
   async startQuiz(client: Socket): Promise<Quizzes | undefined> {
     try {
       const socketId = client.id;
+      console.log({ socketId });
 
       const foundStudent = await this.prisma.students.findFirst({
         where: { socketId },
         include: { quiz: true },
       });
 
+      console.log({ foundStudent });
       if (!foundStudent) {
         client.emit(SOCKET.ERROR, {
           message: `socket_id=${socketId} bunday socket ID'li foydalanuvchi topilmadi`,
