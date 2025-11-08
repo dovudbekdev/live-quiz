@@ -77,7 +77,7 @@ export class BotUpdate {
     ctx.session.phoneNumber = contact.phone_number;
 
     const foundTeacher = await this.userService.findOneTeacherWithPhoneNumber(
-      contact.phone_number,
+      `+${contact.phone_number}`,
     );
 
     if (step === BOT_STEP.LOGIN) {
@@ -95,21 +95,19 @@ export class BotUpdate {
         telegramId: ctx.from?.id,
       });
 
-      await ctx.reply(
+      return await ctx.reply(
         `✅ Muvaffaqiyatli tizimga kirdingiz, ${foundTeacher.name || 'O‘qituvchi'}!\n\n` +
           `Endi test natijalari va xabarnomalar shu yerga yuboriladi 📩`,
       );
-      return;
     }
 
     if (step === BOT_STEP.REGISTER) {
       ctx.session.aks = BOT_STEP.ASK_PASSWORD;
 
-      await ctx.reply(
+      return await ctx.reply(
         `🔑 Endi esa parol o‘ylab toping.\n\n` +
           `Bu parol orqali keyinchalik tizimga kira olasiz.`,
       );
-      return;
     }
   }
 
@@ -123,13 +121,13 @@ export class BotUpdate {
       await this.authService.register({
         phoneNumber: `+${ctx.session.phoneNumber}`,
         password: msg.text,
+        telegramId: ctx.from?.id,
       });
 
-      await ctx.reply(
+      return await ctx.reply(
         `🎉 Tabriklaymiz! Siz muvaffaqiyatli ro‘yxatdan o‘tdingiz.\n\n` +
           `Endi test natijalari va yangiliklar shu bot orqali yuboriladi 📬`,
       );
-      return;
     }
 
     await ctx.reply(
