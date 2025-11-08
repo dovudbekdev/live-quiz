@@ -21,7 +21,7 @@ enum QuizType {
 
 model Teachers {
   id                   Int       @id @default(autoincrement())
-  telegramId           Int?      @map("telegram_id")
+  telegramId           BigInt?   @map("telegram_id")
   name                 String?   @db.VarChar(36)
   surname              String?   @db.VarChar(36)
   phoneNumber          String    @unique @map("phone_number")
