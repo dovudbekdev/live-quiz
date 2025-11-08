@@ -4,7 +4,7 @@ CREATE TYPE "QuizType" AS ENUM ('INDIVIDUAL', 'TEAM');
 -- CreateTable
 CREATE TABLE "teachers" (
     "id" SERIAL NOT NULL,
-    "telegram_id" INTEGER,
+    "telegram_id" BIGINT,
     "name" VARCHAR(36),
     "surname" VARCHAR(36),
     "phone_number" TEXT NOT NULL,

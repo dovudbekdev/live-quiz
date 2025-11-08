@@ -118,12 +118,14 @@ export class BotUpdate {
     const ask = ctx.session.aks;
 
     if (ask === BOT_STEP.ASK_PASSWORD && step === BOT_STEP.REGISTER) {
-      await this.authService.register({
+      const result = await this.authService.register({
         name: ctx.from?.first_name,
         phoneNumber: `+${ctx.session.phoneNumber}`,
         password: msg.text,
         telegramId: ctx.from?.id,
       });
+
+      console.log('Bot result =>', result);
 
       return await ctx.reply(
         `🎉 Tabriklaymiz! Siz muvaffaqiyatli ro‘yxatdan o‘tdingiz.\n\n` +
