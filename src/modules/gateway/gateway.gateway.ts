@@ -233,7 +233,10 @@ export class GatewayGateway
     try {
       const quiz = await this.gatewayService.startQuiz(client);
 
-      if (!quiz) return;
+      if (!quiz) {
+        console.log('quiz =>', { quiz });
+        return;
+      }
 
       this.server.to(quiz.roomCode).emit(SOCKET.QUIZ_LIST, { quiz });
     } catch (error) {
