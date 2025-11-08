@@ -281,6 +281,7 @@ export class GatewayGateway
 
     if (endQuizDto.teacherId) {
       const bestResult = await this.prisma.results.findFirst({
+        where: { quizId: endQuizDto.quizId },
         orderBy: [
           { score: 'desc' }, // 1️⃣ Eng katta ball bo‘yicha
           { finishedAt: 'asc' }, // 2️⃣ Agar ball teng bo‘lsa, eng erta tugatgan
