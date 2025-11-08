@@ -24,7 +24,7 @@ export class GatewayService {
     client: Socket,
   ): Promise<
     | {
-        student: Students | null;
+        student: Students;
         students: Students[];
         teacher: Teachers;
         quiz: Quizzes;
@@ -40,16 +40,13 @@ export class GatewayService {
       return;
     }
 
-    let student: null | Students = null;
-    // if (joinRoomDto.type !== 'teacher') {
-    student = await this.prisma.students.create({
+    const student = await this.prisma.students.create({
       data: {
         quizId: quiz.id,
         name: joinRoomDto.name,
         socketId: client.id,
       },
     });
-    // }
 
     // Xonadagi barcha studentlar ro'yxatini olish
     const students = await this.prisma.students.findMany({
