@@ -323,8 +323,9 @@ export class GatewayGateway
 
       if (!foundTeacher?.telegramId) {
         client.emit(SOCKET.ERROR, {
-          message: `${foundTeacher?.name} iltioms natijalarni sizga yubora olishimiz uchun bot'ga start bosing`,
+          message: `✨ Hurmatli ${foundTeacher?.name}! Natijalarni olish uchun iltimos, <a href="https://t.me/miniMyTestBot">Telegram botimizni</a> oching va "Start" tugmasini bosing 📲`,
         });
+
         return;
       }
 
