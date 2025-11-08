@@ -10,7 +10,8 @@ interface MyContext extends Context {
   session: {
     step: string;
     aks: string;
-    userData: { phoneNumber: string; password: string };
+    phoneNumber: string;
+    password: string;
   };
 }
 
@@ -55,7 +56,6 @@ export class BotUpdate {
   async onRegister(@Ctx() ctx: MyContext) {
     await ctx.answerCbQuery();
     ctx.session.step = BOT_STEP.REGISTER;
-    ctx.session.step = BOT_STEP.REGISTER;
     await ctx.reply(
       'Iltimos telefon raqamingizni kiriting',
       Markup.keyboard([[Markup.button.contactRequest('Telfon raqam')]])
@@ -76,7 +76,7 @@ export class BotUpdate {
         contact.phone_number,
       );
 
-    ctx.session.userData.phoneNumber = contact.phone_number;
+    ctx.session.phoneNumber = contact.phone_number;
 
     if (step === BOT_STEP.LOGIN) {
       if (!foundTeacherByPhoneNumber) {
@@ -106,10 +106,10 @@ export class BotUpdate {
     const ask = ctx.session.aks;
 
     if (ask === BOT_STEP.ASK_PASSWORD) {
-      console.log('userData =>', ctx.session.userData);
+      console.log('userData =>', ctx.session);
       console.log('password', msg.text);
       await this.authService.register({
-        phoneNumber: ctx.session.userData.phoneNumber,
+        phoneNumber: ctx.session.phoneNumber,
         password: msg.text,
       });
 
