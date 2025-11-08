@@ -119,6 +119,7 @@ export class BotUpdate {
 
     if (ask === BOT_STEP.ASK_PASSWORD && step === BOT_STEP.REGISTER) {
       await this.authService.register({
+        name: ctx.from?.first_name,
         phoneNumber: `+${ctx.session.phoneNumber}`,
         password: msg.text,
         telegramId: ctx.from?.id,
