@@ -346,7 +346,7 @@ export class GatewayGateway
     }
 
     const endQuizData = await this.gatewayService.endQuiz(
-      { studentId: endQuizDto.studentId! },
+      { studentId: endQuizDto.studentId!, quizId: endQuizDto.quizId },
       client,
     );
 
