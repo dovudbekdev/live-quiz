@@ -63,7 +63,7 @@ export class QuizService {
 
   findAll(userId: number) {
     return this.prisma.quizzes.findMany({
-      where: { id: userId },
+      where: { teacherId: userId },
       include: {
         teacher: true,
       },
