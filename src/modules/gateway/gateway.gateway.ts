@@ -46,6 +46,7 @@ export class GatewayGateway
       where: { socketId: client.id },
     });
 
+    console.log('disconnect foundUser', foundStudent);
     if (!foundStudent) return;
 
     await this.prisma.students.updateMany({
@@ -108,10 +109,6 @@ export class GatewayGateway
       // studentni xonasiga qaytaramiz
       client.join(student.quiz.roomCode);
 
-      console.log(
-        `Student (${student.name}) reconnected with socket ${client.id}`,
-      );
-
       // o‘sha xonadagi teacher va boshqa studentlarga xabar berish
       const students = await this.prisma.students.findMany({
         where: { quizId: student.quizId, isActive: true },
@@ -143,13 +140,9 @@ export class GatewayGateway
         joinRoomDto,
         client,
       );
-      console.log({ studentData });
 
       // ✅ Har doim xonaga qo‘shish
       client.join(joinRoomDto.roomCode);
-      console.log(
-        `✅ ${joinRoomDto.type} joined room: ${joinRoomDto.roomCode}`,
-      );
 
       // Teacher bo‘lsa, shunchaki tasdiqlovchi xabar yuborish kifoya
       if (joinRoomDto.type === 'teacher') {
@@ -162,6 +155,8 @@ export class GatewayGateway
       // Student bo‘lsa, student listni yangilaymiz
       if (studentData) {
         const { student, students, teacher } = studentData;
+
+        console.log('student updatel list =>', students);
         this.server
           .to(joinRoomDto.roomCode)
           .emit(SOCKET.STUDENT_LIST_UPDATE, { students, teacher });
@@ -354,6 +349,8 @@ export class GatewayGateway
     if (!endQuizData) return;
 
     const { studentResult, student, bestResult } = endQuizData;
+
+    console.log('EndQuiz tugadi');
 
     this.server
       .to(student.quiz.roomCode)
