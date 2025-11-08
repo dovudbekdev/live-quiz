@@ -105,7 +105,7 @@ export class BotUpdate {
     const step = ctx.session.step;
     const ask = ctx.session.aks;
 
-    if (ask === BOT_STEP.ASK_PASSWORD) {
+    if (ask === BOT_STEP.ASK_PASSWORD && step === BOT_STEP.REGISTER) {
       console.log('userData =>', ctx.session);
       console.log('password', msg.text);
       await this.authService.register({
