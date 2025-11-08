@@ -40,13 +40,21 @@ export class GatewayService {
       return;
     }
 
-    const student = await this.prisma.students.create({
-      data: {
-        quizId: quiz.id,
-        name: joinRoomDto.name,
+    let student = await this.prisma.students.findFirst({
+      where: {
         socketId: client.id,
       },
     });
+
+    if (!student) {
+      student = await this.prisma.students.create({
+        data: {
+          quizId: quiz.id,
+          name: joinRoomDto.name,
+          socketId: client.id,
+        },
+      });
+    }
 
     // Xonadagi barcha studentlar ro'yxatini olish
     const students = await this.prisma.students.findMany({
