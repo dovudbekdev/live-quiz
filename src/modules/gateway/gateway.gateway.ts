@@ -338,10 +338,7 @@ export class GatewayGateway
         return;
       }
 
-      await this.botService.sendMessage(
-        Number(foundTeacher.telegramId),
-        message,
-      );
+      await this.botService.sendMessage(foundTeacher.telegramId, message);
 
       this.server.to(student.quiz.roomCode).emit(SOCKET.RESULT, { bestResult });
       return;
