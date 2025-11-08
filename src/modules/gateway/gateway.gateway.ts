@@ -145,6 +145,8 @@ export class GatewayGateway
         client,
       );
 
+      console.log({ studentData });
+
       if (!studentData) {
         client.emit(SOCKET.ERROR, { message: 'studentData mavjud emas' });
         return;
