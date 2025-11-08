@@ -161,13 +161,14 @@ export class GatewayGateway
 
       // Student bo‘lsa, student listni yangilaymiz
       if (studentData) {
-        const { students, teacher } = studentData;
+        const { student, students, teacher } = studentData;
         this.server
           .to(joinRoomDto.roomCode)
           .emit(SOCKET.STUDENT_LIST_UPDATE, { students, teacher });
 
         client.emit(SOCKET.JOINED_ROOM, {
           message: 'Xonaga muvaffaqiyatli qo‘shildingiz',
+          student: student,
         });
       } else {
         client.emit(SOCKET.ERROR, {
