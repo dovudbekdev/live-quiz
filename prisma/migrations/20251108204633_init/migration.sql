@@ -24,6 +24,7 @@ CREATE TABLE "students" (
     "name" VARCHAR(36) NOT NULL,
     "socket_id" TEXT NOT NULL,
     "joined_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isActive" BOOLEAN DEFAULT true,
 
     CONSTRAINT "students_pkey" PRIMARY KEY ("id")
 );
@@ -36,6 +37,9 @@ CREATE TABLE "quizzes" (
     "type" "QuizType" NOT NULL,
     "room_code" TEXT NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT false,
+    "duration" INTEGER NOT NULL,
+    "start_time" TIMESTAMP(3),
+    "end_time" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "quizzes_pkey" PRIMARY KEY ("id")
@@ -74,10 +78,13 @@ CREATE TABLE "student_answers" (
 -- CreateTable
 CREATE TABLE "results" (
     "id" SERIAL NOT NULL,
+    "quiz_id" INTEGER NOT NULL,
     "student_id" INTEGER NOT NULL,
     "total_correct" INTEGER NOT NULL,
     "total_question" INTEGER NOT NULL,
     "score" DECIMAL(8,2) NOT NULL,
+    "started_at" TIMESTAMP(3) NOT NULL,
+    "finished_at" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "results_pkey" PRIMARY KEY ("id")

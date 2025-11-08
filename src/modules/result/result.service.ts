@@ -65,6 +65,7 @@ export class ResultService {
     const result = await this.prisma.results.create({
       data: {
         studentId: student.id,
+        quizId: quiz.id,
         totalCorrect: totalCorrect,
         totalQuestion: totalQuestions,
         score: new Prisma.Decimal(score),

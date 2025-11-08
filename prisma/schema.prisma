@@ -112,6 +112,7 @@ model StudentAnswers {
 
 model Results {
   id            Int      @id @default(autoincrement())
+  quizId        Int      @map("quiz_id")
   studentId     Int      @unique @map("student_id")
   totalCorrect  Int      @map("total_correct")
   totalQuestion Int      @map("total_question")

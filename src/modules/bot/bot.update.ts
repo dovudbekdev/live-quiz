@@ -121,7 +121,7 @@ export class BotUpdate {
 
     if (ask === BOT_STEP.ASK_PASSWORD && step === BOT_STEP.REGISTER) {
       await this.authService.register({
-        phoneNumber: ctx.session.phoneNumber,
+        phoneNumber: `+${ctx.session.phoneNumber}`,
         password: msg.text,
       });
 
