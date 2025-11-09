@@ -82,7 +82,7 @@ export class BotUpdate {
 
     if (step === BOT_STEP.LOGIN) {
       if (!foundTeacher) {
-        return await ctx.reply(
+        return ctx.reply(
           `❌ Bu telefon raqam bizning bazada topilmadi.\n\n` +
             `Iltimos, avval *Ro‘yxatdan o‘tish* jarayonini bajaring.`,
           Markup.inlineKeyboard([
@@ -95,7 +95,7 @@ export class BotUpdate {
         telegramId: String(ctx.from?.id),
       });
 
-      return await ctx.reply(
+      return ctx.reply(
         `✅ Muvaffaqiyatli tizimga kirdingiz, ${foundTeacher.name || 'O‘qituvchi'}!\n\n` +
           `Endi test natijalari va xabarnomalar shu yerga yuboriladi 📩`,
       );
@@ -104,7 +104,7 @@ export class BotUpdate {
     if (step === BOT_STEP.REGISTER) {
       ctx.session.aks = BOT_STEP.ASK_PASSWORD;
 
-      return await ctx.reply(
+      return ctx.reply(
         `🔑 Endi esa parol o‘ylab toping.\n\n` +
           `Bu parol orqali keyinchalik tizimga kira olasiz.`,
       );
@@ -127,7 +127,7 @@ export class BotUpdate {
 
       console.log('Bot result =>', result);
 
-      return await ctx.reply(
+      return ctx.reply(
         `🎉 Tabriklaymiz! Siz muvaffaqiyatli ro‘yxatdan o‘tdingiz.\n\n` +
           `Endi test natijalari va yangiliklar shu bot orqali yuboriladi 📬`,
       );

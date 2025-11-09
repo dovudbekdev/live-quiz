@@ -281,7 +281,7 @@ export class GatewayGateway
 
     if (endQuizDto.teacherId) {
       const bestResult = await this.prisma.results.findFirst({
-        where: { quizId: endQuizDto.quizId },
+        where: { quizId: endQuizDto.quizId, deleted: false },
         orderBy: [
           { score: 'desc' }, // 1️⃣ Eng katta ball bo‘yicha
           { finishedAt: 'asc' }, // 2️⃣ Agar ball teng bo‘lsa, eng erta tugatgan
@@ -326,7 +326,7 @@ export class GatewayGateway
 
       if (!foundTeacher?.telegramId) {
         client.emit(SOCKET.ERROR, {
-          message: `✨ Hurmatli ${foundTeacher?.name}! Natijalarni olish uchun iltimos, <a href="https://t.me/miniMyTestBot">Telegram botimizni</a> oching va "Start" tugmasini bosing 📲`,
+          message: `✨ Hurmatli ${foundTeacher?.name}! Natijalarni olish uchun iltimos, "https://t.me/miniMyTestBot" Telegram botimizni</a> oching va "Start" tugmasini bosing 📲`,
         });
 
         return;
@@ -342,6 +342,18 @@ export class GatewayGateway
       await this.botService.sendMessage(foundTeacher.telegramId, message);
 
       this.server.to(student.quiz.roomCode).emit(SOCKET.RESULT, { bestResult });
+
+      // Quiz'ni faolsizlantirish
+      await this.prisma.quizzes.update({
+        where: { id: endQuizDto.quizId },
+        data: { isActive: false },
+      });
+
+      // Yuborilgan result'larni o'chirish
+      await this.prisma.results.update({
+        where: { id: bestResult.id },
+        data: { deleted: true },
+      });
       return;
     }
 
@@ -359,5 +371,21 @@ export class GatewayGateway
     this.server
       .to(student.quiz.roomCode)
       .emit(SOCKET.RESULT, { studentResult, bestResult });
+
+    // Quiz'ni faolsizlantirish
+    await this.prisma.quizzes.update({
+      where: { id: endQuizDto.quizId },
+      data: { isActive: false },
+    });
+    await this.prisma.quizzes.update({
+      where: { id: endQuizDto.quizId },
+      data: { isActive: false },
+    });
+
+    // Yuborilgan result'larni o'chirish
+    await this.prisma.results.update({
+      where: { id: bestResult.id },
+      data: { deleted: true },
+    });
   }
 }

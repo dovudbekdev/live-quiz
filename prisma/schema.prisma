@@ -117,6 +117,7 @@ model Results {
   totalCorrect  Int      @map("total_correct")
   totalQuestion Int      @map("total_question")
   score         Decimal  @db.Decimal(8, 2)
+  deleted       Boolean  @default(false)
   startedAt     DateTime @map("started_at")
   finishedAt    DateTime @map("finished_at")
   createdAt     DateTime @default(now()) @map("created_at")
