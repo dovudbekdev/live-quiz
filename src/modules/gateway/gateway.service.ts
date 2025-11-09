@@ -40,11 +40,15 @@ export class GatewayService {
       return;
     }
 
+    console.log('joinroom  quiz=>', quiz);
+
     let student = await this.prisma.students.findFirst({
       where: {
         socketId: client.id,
       },
     });
+
+    console.log('joinroom student =>', student);
 
     if (!student) {
       student = await this.prisma.students.create({
