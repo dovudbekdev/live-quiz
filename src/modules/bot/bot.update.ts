@@ -85,7 +85,7 @@ export class BotUpdate {
     console.log('phonenumber =>', contact.phone_number);
 
     const foundTeacher = await this.userService.findOneTeacherWithPhoneNumber(
-      `+${contact.phone_number}`,
+      contact.phone_number,
     );
 
     if (step === BOT_STEP.LOGIN) {
