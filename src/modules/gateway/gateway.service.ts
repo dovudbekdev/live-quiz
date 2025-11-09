@@ -183,6 +183,7 @@ export class GatewayService {
   > {
     try {
       const result = await this.resultService.create(endQuizDto);
+      console.log('result =>', result);
       const student = await this.prisma.students.findUnique({
         where: { id: endQuizDto.studentId },
         include: { quiz: true },
