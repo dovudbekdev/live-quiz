@@ -278,7 +278,6 @@ export class GatewayGateway
     @ConnectedSocket() client: Socket,
   ) {
     console.log('End quiz handle', { endQuizDto });
-
     if (endQuizDto.teacherId) {
       const bestResult = await this.prisma.results.findFirst({
         where: { quizId: endQuizDto.quizId, deleted: false },
@@ -329,12 +328,16 @@ export class GatewayGateway
           message: `✨ Hurmatli ${foundTeacher?.name}! Natijalarni olish uchun iltimos, "https://t.me/miniMyTestBot" Telegram botimizni</a> oching va "Start" tugmasini bosing 📲`,
         });
 
-        return;
-      }
+        // Quiz'ni faolsizlantirish
+        await this.prisma.quizzes.update({
+          where: { id: endQuizDto.quizId },
+          data: { isActive: false },
+        });
 
-      if (!bestResult) {
-        client.emit(SOCKET.ERROR, {
-          message: `Eng yuqori natija to'plagan o'quvchi mavjud emas`,
+        // Yuborilgan result'larni o'chirish
+        await this.prisma.results.update({
+          where: { id: bestResult.id },
+          data: { deleted: true },
         });
         return;
       }
@@ -357,35 +360,38 @@ export class GatewayGateway
       return;
     }
 
-    const endQuizData = await this.gatewayService.endQuiz(
-      { studentId: endQuizDto.studentId!, quizId: endQuizDto.quizId },
-      client,
-    );
+    if (endQuizDto.studentId) {
+      const endQuizData = await this.gatewayService.endQuiz(
+        { studentId: endQuizDto.studentId!, quizId: endQuizDto.quizId },
+        client,
+      );
 
-    if (!endQuizData) return;
+      if (!endQuizData) {
+        client.emit(SOCKET.ERROR, {
+          message: `Quiz data topilmadi`,
+        });
+        return;
+      }
 
-    const { studentResult, student, bestResult } = endQuizData;
+      const { studentResult, student, bestResult } = endQuizData;
 
-    console.log('EndQuiz tugadi');
+      console.log('EndQuiz tugadi');
 
-    this.server
-      .to(student.quiz.roomCode)
-      .emit(SOCKET.RESULT, { studentResult, bestResult });
+      this.server
+        .to(student.quiz.roomCode)
+        .emit(SOCKET.RESULT, { studentResult, bestResult });
 
-    // Quiz'ni faolsizlantirish
-    await this.prisma.quizzes.update({
-      where: { id: endQuizDto.quizId },
-      data: { isActive: false },
-    });
-    await this.prisma.quizzes.update({
-      where: { id: endQuizDto.quizId },
-      data: { isActive: false },
-    });
+      // Quiz'ni faolsizlantirish
+      await this.prisma.quizzes.update({
+        where: { id: endQuizDto.quizId },
+        data: { isActive: false },
+      });
 
-    // Yuborilgan result'larni o'chirish
-    await this.prisma.results.update({
-      where: { id: bestResult.id },
-      data: { deleted: true },
-    });
+      // Yuborilgan result'larni o'chirish
+      await this.prisma.results.update({
+        where: { id: bestResult.id },
+        data: { deleted: true },
+      });
+    }
   }
 }
