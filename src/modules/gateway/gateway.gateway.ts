@@ -15,7 +15,7 @@ import { PrismaService } from '@modules/prisma/prisma.service';
 import { StudentAnswerDto } from './dto/student-answer.dto';
 import { EndQuizDto } from './dto/end-quiz.dto';
 import { BotService } from '@modules/bot/bot.service';
-import { Results } from '@prisma/client';
+import { Results, Students } from '@prisma/client';
 
 @WebSocketGateway({
   cors: {
@@ -283,7 +283,7 @@ export class GatewayGateway
     // 🧠 Agar bu teacher tomonidan yuborilgan bo‘lsa:
     // 🧠 Agar bu teacher tomonidan yuborilgan bo‘lsa:
     if (endQuizDto.teacherId) {
-      let bestResult: null | Results = null;
+      let bestResult: null | (Results & { student: Students }) = null;
       let attempts = 0;
       const maxAttempts = 5;
 
@@ -327,6 +327,67 @@ export class GatewayGateway
 
       console.log({ bestResult });
       // 🔽 Natijani yuborish qismi
+
+      const student = await this.prisma.students.findUnique({
+        where: { id: bestResult.studentId },
+        include: { quiz: true },
+      });
+
+      if (!student) {
+        client.emit(SOCKET.ERROR, { message: 'Student topilmadi' });
+        return;
+      }
+
+      const message = this.botService.resultMessage(bestResult);
+
+      const foundTeacher = await this.prisma.teachers.findUnique({
+        where: { id: endQuizDto.teacherId },
+      });
+
+      if (!foundTeacher) {
+        client.emit(SOCKET.ERROR, {
+          message: 'Teacher topilmadi',
+        });
+        return;
+      }
+
+      if (!foundTeacher?.telegramId) {
+        client.emit(SOCKET.ERROR, {
+          message: `✨ Hurmatli ${foundTeacher?.name}! Natijalarni olish uchun iltimos, "https://t.me/miniMyTestBot" Telegram botimizni oching va "Start" tugmasini bosing 📲`,
+        });
+
+        // Quiz'ni faolsizlantirish
+        await this.prisma.quizzes.update({
+          where: { id: endQuizDto.quizId },
+          data: { isActive: false },
+        });
+
+        // Yuborilgan result'larni o'chirish
+        await this.prisma.results.update({
+          where: { id: bestResult.id },
+          data: { deleted: true },
+        });
+
+        return;
+      }
+
+      await this.botService.sendMessage(foundTeacher.telegramId, message);
+
+      this.server.to(student.quiz.roomCode).emit(SOCKET.RESULT, { bestResult });
+
+      // Quiz'ni faolsizlantirish
+      await this.prisma.quizzes.update({
+        where: { id: endQuizDto.quizId },
+        data: { isActive: false },
+      });
+
+      // Yuborilgan result'larni o'chirish
+      await this.prisma.results.update({
+        where: { id: bestResult.id },
+        data: { deleted: true },
+      });
+
+      return;
     }
 
     // 🟩 Student END_QUIZ qismi sizdagi kabi qoladi

@@ -48,9 +48,12 @@ export class BotUpdate {
     await ctx.reply(
       `📱 Iltimos, telefon raqamingizni yuboring.\n\n` +
         `Buning uchun pastdagi *"Telefon raqam"* tugmasini bosing 👇`,
-      Markup.keyboard([[Markup.button.contactRequest('📲 Telefon raqam')]])
-        .resize()
-        .oneTime(),
+      {
+        parse_mode: 'MarkdownV2',
+        ...Markup.keyboard([[Markup.button.contactRequest('📲 Telefon raqam')]])
+          .resize()
+          .oneTime(),
+      },
     );
   }
 
@@ -62,9 +65,12 @@ export class BotUpdate {
     await ctx.reply(
       `📝 Yangi ro‘yxatdan o‘tish jarayonini boshlaymiz!\n\n` +
         `Iltimos, telefon raqamingizni yuboring 📱`,
-      Markup.keyboard([[Markup.button.contactRequest('📲 Telefon raqam')]])
-        .resize()
-        .oneTime(),
+      {
+        parse_mode: 'MarkdownV2',
+        ...Markup.keyboard([[Markup.button.contactRequest('📲 Telefon raqam')]])
+          .resize()
+          .oneTime(),
+      },
     );
   }
 
@@ -85,9 +91,12 @@ export class BotUpdate {
         return ctx.reply(
           `❌ Bu telefon raqam bizning bazada topilmadi.\n\n` +
             `Iltimos, avval *Ro‘yxatdan o‘tish* jarayonini bajaring.`,
-          Markup.inlineKeyboard([
-            [Markup.button.callback("📝 Ro'yxatdan o'tish", 'register')],
-          ]),
+          {
+            parse_mode: 'MarkdownV2',
+            ...Markup.inlineKeyboard([
+              [Markup.button.callback("📝 Ro'yxatdan o'tish", 'register')],
+            ]),
+          },
         );
       }
 
@@ -136,9 +145,12 @@ export class BotUpdate {
     await ctx.reply(
       `🤔 Kechirasiz, bu buyruqni tushunmadim.\n\n` +
         `Iltimos, kerakli tugmani bosing yoki /start buyrug‘ini yuboring.`,
-      Markup.inlineKeyboard([
-        [Markup.button.callback('🏠 Bosh sahifa', 'start')],
-      ]),
+      {
+        parse_mode: 'MarkdownV2',
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('🏠 Bosh sahifa', 'start')],
+        ]),
+      },
     );
   }
 }

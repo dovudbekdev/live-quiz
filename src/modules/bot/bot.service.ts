@@ -30,42 +30,39 @@ export class BotService {
     return true;
   }
 
-  resultMessage(student: Students, result: Results) {
+  resultMessage(result: Results & { student: Students }) {
     const startTime = new Date(result.startedAt);
     const endTime = new Date(result.finishedAt);
 
-    // ✅ Har ikkisini millisekundga aylantiramiz
     const diffMs = endTime.getTime() - startTime.getTime();
-
-    // Uni daqiqa va soniyaga o‘tkazamiz
     const minutes = Math.floor(diffMs / 60000);
     const seconds = Math.floor((diffMs % 60000) / 1000);
-
     const durationText =
       minutes > 0 ? `${minutes} daqiqa ${seconds} soniya` : `${seconds} soniya`;
+
+    const praiseText =
+      Number(result.score) >= 90
+        ? '🏆 <b>Ajoyib natija!</b> Ushbu talaba haqiqatan ham mukammal ishlagan! 🔥'
+        : Number(result.score) >= 70
+          ? '👏 <b>Yaxshi natija!</b> Juda barqaror ishlagan, zo‘r natija! 💪'
+          : Number(result.score) >= 50
+            ? '🙂 <b>O‘rtacha natija,</b> lekin potensiali kuchli! 📚'
+            : '😔 <b>Bu safar unchalik emas,</b> ammo keyingi safar albatta yaxshiroq bo‘ladi! 🚀';
+
     return `
-📊 <b>Test natijasi</b>
+🎓 <b>Eng yuqori natijali talaba</b>
 
-👤 <b>Foydalanuvchi:</b> ${student.name}
-🆔 <b>ID:</b> ${student.id}
+👤 <b>Ism:</b> ${result.student.name}
+🆔 <b>ID:</b> ${result.student.id}
 
-📝 <b>Umumiy savollar:</b> ${result.totalQuestion}
-✅ <b>To‘g‘ri javoblar:</b> ${result.totalCorrect}
-📈 <b>Ball:</b> ${result.score}%
+📈 <b>Umumiy ball:</b> ${result.score}%
+✅ <b>To‘g‘ri javoblar:</b> ${result.totalCorrect}/${result.totalQuestion}
 
-🕒 <b>Boshlangan vaqt:</b> ${new Date(result.startedAt).toLocaleString('uz-UZ')}
-🏁 <b>Tugagan vaqt:</b> ${new Date(result.finishedAt).toLocaleString('uz-UZ')}
+🕒 <b>Boshlangan:</b> ${startTime.toLocaleString('uz-UZ')}
+🏁 <b>Tugagan:</b> ${endTime.toLocaleString('uz-UZ')}
 ⏱️ <b>Davomiyligi:</b> ${durationText}
 
-${
-  Number(result.score) >= 90
-    ? '🏆 Ajoyib natija! Siz juda zo‘rsiz! 🔥'
-    : Number(result.score) >= 70
-      ? '👏 Yaxshi natija! Shu zaylda davom eting 💪'
-      : Number(result.score) >= 50
-        ? '🙂 Yomon emas, lekin biroz ko‘proq mashq qiling 📚'
-        : '😔 Natija pastroq chiqdi. Keyingi safar albatta muvaffaqiyat qozonasiz!'
-}
+${praiseText}
 `;
   }
 }
