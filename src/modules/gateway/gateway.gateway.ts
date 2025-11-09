@@ -281,37 +281,40 @@ export class GatewayGateway
     console.log('End quiz handle', { endQuizDto });
 
     // 🧠 Agar bu teacher tomonidan yuborilgan bo‘lsa:
+    // 🧠 Agar bu teacher tomonidan yuborilgan bo‘lsa:
     if (endQuizDto.teacherId) {
       let bestResult: null | Results = null;
       let attempts = 0;
       const maxAttempts = 5;
 
-      // 🧠 Studentlar sonini aniqlaymiz
+      // 🧠 Faqat studentlarni olish (teacher emas)
       const totalStudents = await this.prisma.students.findMany({
-        where: { quizId: endQuizDto.quizId, isActive: true },
+        where: {
+          quizId: endQuizDto.quizId,
+          isActive: true,
+          // t: { not: 'Teacher' }, // yoki agar type mavjud bo‘lsa: type: 'student'
+        },
       });
 
       while (!bestResult && attempts < maxAttempts) {
-        // 🔹 Hozircha natija yozgan studentlar
+        // 🔹 Natijalar
         const results = await this.prisma.results.findMany({
           where: { quizId: endQuizDto.quizId, deleted: false },
           include: { student: true },
           orderBy: [{ score: 'desc' }, { finishedAt: 'asc' }],
         });
 
-        const finishedCount = results.length - 1;
+        const finishedCount = results.length;
         console.log(
           `📊 ${finishedCount}/${totalStudents.length - 1} student yakunladi`,
         );
 
-        // 🔹 Agar hali hamma tugatmagan bo‘lsa — kutamiz
         if (finishedCount < totalStudents.length - 1) {
           attempts++;
           await new Promise((resolve) => setTimeout(resolve, 3000));
           continue;
         }
 
-        // 🔹 Hamma tugatgan bo‘lsa — bestResultni olamiz
         bestResult = results[0];
       }
 
@@ -323,7 +326,7 @@ export class GatewayGateway
       }
 
       console.log({ bestResult });
-      // 🔽 Shu yerda sizdagi mavjud natijani yuborish qismi davom etadi
+      // 🔽 Natijani yuborish qismi
     }
 
     // 🟩 Student END_QUIZ qismi sizdagi kabi qoladi
