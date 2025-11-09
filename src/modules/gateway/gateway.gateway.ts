@@ -15,6 +15,7 @@ import { PrismaService } from '@modules/prisma/prisma.service';
 import { StudentAnswerDto } from './dto/student-answer.dto';
 import { EndQuizDto } from './dto/end-quiz.dto';
 import { BotService } from '@modules/bot/bot.service';
+import { Results } from '@prisma/client';
 
 @WebSocketGateway({
   cors: {
@@ -278,38 +279,54 @@ export class GatewayGateway
     @ConnectedSocket() client: Socket,
   ) {
     console.log('End quiz handle', { endQuizDto });
+
+    // 🧠 Agar bu teacher tomonidan yuborilgan bo‘lsa:
     if (endQuizDto.teacherId) {
-      const bestResult = await this.prisma.results.findFirst({
-        where: { quizId: endQuizDto.quizId, deleted: false },
-        orderBy: [
-          { score: 'desc' }, // 1️⃣ Eng katta ball bo‘yicha
-          { finishedAt: 'asc' }, // 2️⃣ Agar ball teng bo‘lsa, eng erta tugatgan
-        ],
-        include: {
-          student: true, // 3️⃣ Student ma’lumotlarini ham qo‘shamiz
-        },
-      });
+      let bestResult: null | Results = null;
+      let attempts = 0;
+      const maxAttempts = 5; // 5 marta urinish (15 soniya)
 
-      console.log({ bestResult });
+      // 🔁 Retry logikasi — har 3 sekundda qayta tekshiradi
+      while (!bestResult && attempts < maxAttempts) {
+        bestResult = await this.prisma.results.findFirst({
+          where: { quizId: endQuizDto.quizId, deleted: false },
+          orderBy: [{ score: 'desc' }, { finishedAt: 'asc' }],
+          include: { student: true },
+        });
 
+        if (bestResult) break; // topilsa, chiqamiz
+
+        attempts++;
+        console.log(
+          `⏳ Natijalar hali topilmadi... (${attempts}/${maxAttempts})`,
+        );
+
+        // 3 soniya kutish
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+
+      // ✅ Natija topilmasa ham xabar berish
       if (!bestResult) {
         client.emit(SOCKET.ERROR, {
-          message: `Eng yuqori natija topilmadi`,
+          message:
+            'Hech bir talaba testni yakunlamagan. Iltimos, biroz kutib qayta urinib ko‘ring.',
         });
         return;
       }
 
+      console.log({ bestResult });
+
+      // 🔽 Quyidagi kod sizda bor edi — o‘zgarmaydi
       const student = await this.prisma.students.findUnique({
         where: { id: bestResult.studentId },
         include: { quiz: true },
       });
 
       if (!student) {
-        client.emit(SOCKET.ERROR, {
-          message: `Student topilmadi`,
-        });
+        client.emit(SOCKET.ERROR, { message: `Student topilmadi` });
         return;
       }
+
       const message = this.botService.resultMessage(student, bestResult);
 
       const foundTeacher = await this.prisma.teachers.findUnique({
@@ -317,24 +334,20 @@ export class GatewayGateway
       });
 
       if (!foundTeacher) {
-        client.emit(SOCKET.ERROR, {
-          message: `Teacher topilmadi`,
-        });
+        client.emit(SOCKET.ERROR, { message: `Teacher topilmadi` });
         return;
       }
 
       if (!foundTeacher?.telegramId) {
         client.emit(SOCKET.ERROR, {
-          message: `✨ Hurmatli ${foundTeacher?.name}! Natijalarni olish uchun iltimos, "https://t.me/miniMyTestBot" Telegram botimizni</a> oching va "Start" tugmasini bosing 📲`,
+          message: `✨ Hurmatli ${foundTeacher?.name}! Natijalarni olish uchun iltimos, "https://t.me/miniMyTestBot" Telegram botimizni oching va "Start" tugmasini bosing 📲`,
         });
 
-        // Quiz'ni faolsizlantirish
         await this.prisma.quizzes.update({
           where: { id: endQuizDto.quizId },
           data: { isActive: false },
         });
 
-        // Yuborilgan result'larni o'chirish
         await this.prisma.results.update({
           where: { id: bestResult.id },
           data: { deleted: true },
@@ -342,24 +355,27 @@ export class GatewayGateway
         return;
       }
 
+      // 🔔 Bot orqali natija yuborish
       await this.botService.sendMessage(foundTeacher.telegramId, message);
 
+      // 🔹 Natijani barcha uchun yuborish
       this.server.to(student.quiz.roomCode).emit(SOCKET.RESULT, { bestResult });
 
-      // Quiz'ni faolsizlantirish
+      // 🧹 Quizni yopish
       await this.prisma.quizzes.update({
         where: { id: endQuizDto.quizId },
         data: { isActive: false },
       });
 
-      // Yuborilgan result'larni o'chirish
       await this.prisma.results.update({
         where: { id: bestResult.id },
         data: { deleted: true },
       });
+
       return;
     }
 
+    // 🟩 Student END_QUIZ qismi sizdagi kabi qoladi
     if (endQuizDto.studentId) {
       const endQuizData = await this.gatewayService.endQuiz(
         { studentId: endQuizDto.studentId!, quizId: endQuizDto.quizId },
@@ -367,9 +383,7 @@ export class GatewayGateway
       );
 
       if (!endQuizData) {
-        client.emit(SOCKET.ERROR, {
-          message: `Quiz data topilmadi`,
-        });
+        client.emit(SOCKET.ERROR, { message: `Quiz data topilmadi` });
         return;
       }
 
@@ -380,18 +394,6 @@ export class GatewayGateway
       this.server
         .to(student.quiz.roomCode)
         .emit(SOCKET.RESULT, { studentResult, bestResult });
-
-      // Quiz'ni faolsizlantirish
-      // await this.prisma.quizzes.update({
-      //   where: { id: endQuizDto.quizId },
-      //   data: { isActive: false },
-      // });
-
-      // Yuborilgan result'larni o'chirish
-      // await this.prisma.results.update({
-      //   where: { id: bestResult.id },
-      //   data: { deleted: true },
-      // });
     }
   }
 }
