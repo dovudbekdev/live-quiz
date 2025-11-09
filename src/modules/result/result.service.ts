@@ -79,7 +79,7 @@ export class ResultService {
   }
 
   findAll() {
-    return `This action returns all result`;
+    return this.prisma.results.findMany();
   }
 
   findOne(id: number) {
@@ -91,6 +91,6 @@ export class ResultService {
   }
 
   remove(id: number) {
-    return `This action removes a #${id} result`;
+    return this.prisma.results.delete({ where: { id } });
   }
 }
