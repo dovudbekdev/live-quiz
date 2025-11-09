@@ -382,16 +382,16 @@ export class GatewayGateway
         .emit(SOCKET.RESULT, { studentResult, bestResult });
 
       // Quiz'ni faolsizlantirish
-      await this.prisma.quizzes.update({
-        where: { id: endQuizDto.quizId },
-        data: { isActive: false },
-      });
+      // await this.prisma.quizzes.update({
+      //   where: { id: endQuizDto.quizId },
+      //   data: { isActive: false },
+      // });
 
       // Yuborilgan result'larni o'chirish
-      await this.prisma.results.update({
-        where: { id: bestResult.id },
-        data: { deleted: true },
-      });
+      // await this.prisma.results.update({
+      //   where: { id: bestResult.id },
+      //   data: { deleted: true },
+      // });
     }
   }
 }
