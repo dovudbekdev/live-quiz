@@ -82,6 +82,8 @@ export class BotUpdate {
 
     ctx.session.phoneNumber = contact.phone_number;
 
+    console.log('phonenumber =>', contact.phone_number);
+
     const foundTeacher = await this.userService.findOneTeacherWithPhoneNumber(
       `+${contact.phone_number}`,
     );
