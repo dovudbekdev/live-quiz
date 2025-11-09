@@ -69,6 +69,7 @@ export class ResultService {
         totalCorrect: totalCorrect,
         totalQuestion: totalQuestions,
         score: new Prisma.Decimal(score),
+        deleted: true,
         startedAt: quiz.startTime || new Date(),
         finishedAt: new Date(),
       },
