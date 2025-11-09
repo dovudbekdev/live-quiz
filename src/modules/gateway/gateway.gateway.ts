@@ -287,7 +287,7 @@ export class GatewayGateway
       const maxAttempts = 5;
 
       // 🧠 Studentlar sonini aniqlaymiz
-      const totalStudents = await this.prisma.students.count({
+      const totalStudents = await this.prisma.students.findMany({
         where: { quizId: endQuizDto.quizId, isActive: true },
       });
 
@@ -300,10 +300,12 @@ export class GatewayGateway
         });
 
         const finishedCount = results.length - 1;
-        console.log(`📊 ${finishedCount}/${totalStudents} student yakunladi`);
+        console.log(
+          `📊 ${finishedCount}/${totalStudents.length - 1} student yakunladi`,
+        );
 
         // 🔹 Agar hali hamma tugatmagan bo‘lsa — kutamiz
-        if (finishedCount < totalStudents) {
+        if (finishedCount < totalStudents.length - 1) {
           attempts++;
           await new Promise((resolve) => setTimeout(resolve, 3000));
           continue;
