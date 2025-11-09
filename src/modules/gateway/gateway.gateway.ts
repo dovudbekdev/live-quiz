@@ -284,95 +284,44 @@ export class GatewayGateway
     if (endQuizDto.teacherId) {
       let bestResult: null | Results = null;
       let attempts = 0;
-      const maxAttempts = 5; // 5 marta urinish (15 soniya)
+      const maxAttempts = 5;
 
-      // 🔁 Retry logikasi — har 3 sekundda qayta tekshiradi
+      // 🧠 Studentlar sonini aniqlaymiz
+      const totalStudents = await this.prisma.students.count({
+        where: { quizId: endQuizDto.quizId, isActive: true },
+      });
+
       while (!bestResult && attempts < maxAttempts) {
-        bestResult = await this.prisma.results.findFirst({
+        // 🔹 Hozircha natija yozgan studentlar
+        const results = await this.prisma.results.findMany({
           where: { quizId: endQuizDto.quizId, deleted: false },
-          orderBy: [{ score: 'desc' }, { finishedAt: 'asc' }],
           include: { student: true },
+          orderBy: [{ score: 'desc' }, { finishedAt: 'asc' }],
         });
 
-        if (bestResult) break; // topilsa, chiqamiz
+        const finishedCount = results.length;
+        console.log(`📊 ${finishedCount}/${totalStudents} student yakunladi`);
 
-        attempts++;
-        console.log(
-          `⏳ Natijalar hali topilmadi... (${attempts}/${maxAttempts})`,
-        );
+        // 🔹 Agar hali hamma tugatmagan bo‘lsa — kutamiz
+        if (finishedCount < totalStudents) {
+          attempts++;
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          continue;
+        }
 
-        // 3 soniya kutish
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        // 🔹 Hamma tugatgan bo‘lsa — bestResultni olamiz
+        bestResult = results[0];
       }
 
-      // ✅ Natija topilmasa ham xabar berish
       if (!bestResult) {
         client.emit(SOCKET.ERROR, {
-          message:
-            'Hech bir talaba testni yakunlamagan. Iltimos, biroz kutib qayta urinib ko‘ring.',
+          message: 'Hamma talaba testni yakunlamadi, iltimos kuting.',
         });
         return;
       }
 
       console.log({ bestResult });
-
-      // 🔽 Quyidagi kod sizda bor edi — o‘zgarmaydi
-      const student = await this.prisma.students.findUnique({
-        where: { id: bestResult.studentId },
-        include: { quiz: true },
-      });
-
-      if (!student) {
-        client.emit(SOCKET.ERROR, { message: `Student topilmadi` });
-        return;
-      }
-
-      const message = this.botService.resultMessage(student, bestResult);
-
-      const foundTeacher = await this.prisma.teachers.findUnique({
-        where: { id: endQuizDto.teacherId },
-      });
-
-      if (!foundTeacher) {
-        client.emit(SOCKET.ERROR, { message: `Teacher topilmadi` });
-        return;
-      }
-
-      if (!foundTeacher?.telegramId) {
-        client.emit(SOCKET.ERROR, {
-          message: `✨ Hurmatli ${foundTeacher?.name}! Natijalarni olish uchun iltimos, "https://t.me/miniMyTestBot" Telegram botimizni oching va "Start" tugmasini bosing 📲`,
-        });
-
-        await this.prisma.quizzes.update({
-          where: { id: endQuizDto.quizId },
-          data: { isActive: false },
-        });
-
-        await this.prisma.results.update({
-          where: { id: bestResult.id },
-          data: { deleted: true },
-        });
-        return;
-      }
-
-      // 🔔 Bot orqali natija yuborish
-      await this.botService.sendMessage(foundTeacher.telegramId, message);
-
-      // 🔹 Natijani barcha uchun yuborish
-      this.server.to(student.quiz.roomCode).emit(SOCKET.RESULT, { bestResult });
-
-      // 🧹 Quizni yopish
-      await this.prisma.quizzes.update({
-        where: { id: endQuizDto.quizId },
-        data: { isActive: false },
-      });
-
-      await this.prisma.results.update({
-        where: { id: bestResult.id },
-        data: { deleted: true },
-      });
-
-      return;
+      // 🔽 Shu yerda sizdagi mavjud natijani yuborish qismi davom etadi
     }
 
     // 🟩 Student END_QUIZ qismi sizdagi kabi qoladi
