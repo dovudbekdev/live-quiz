@@ -299,7 +299,7 @@ export class GatewayGateway
           orderBy: [{ score: 'desc' }, { finishedAt: 'asc' }],
         });
 
-        const finishedCount = results.length;
+        const finishedCount = results.length - 1;
         console.log(`📊 ${finishedCount}/${totalStudents} student yakunladi`);
 
         // 🔹 Agar hali hamma tugatmagan bo‘lsa — kutamiz
